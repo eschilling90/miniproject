@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <body>
+    
+    <form>Gmail Username:
+      <input value="{{ username }}" name="username">
+    </form>
+	
+	<form>Gmail Password:
+      <input value="{{ password }}" name="password">
+    </form>
+
+	<form action="/manage" method="post">
+      <input type="submit" value="Login">
+    </form>
+
+  </body>
+</html>
+{% endautoescape %}
