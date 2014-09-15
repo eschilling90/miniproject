@@ -2,7 +2,11 @@
 {% autoescape true %}
 <html>
   <body>
-    
+
+    {% for user in users %}
+      <blockquote>{{ user }}</blockquote>
+    {% endfor %}
+
     <form>Gmail Username:
       <input value="{{ username }}" name="username">
     </form>
@@ -11,10 +15,10 @@
       <input value="{{ password }}" name="password">
     </form>
 
-	<form action="/manage" method="post">
-      <input type="submit" value="Login">
+	<form method="adduser">
+      <input type="submit" value="Add User">
     </form>
-
+  <a href="{{ url|safe }}">{{ url_linktext }}</a>
   </body>
 </html>
 {% endautoescape %}
