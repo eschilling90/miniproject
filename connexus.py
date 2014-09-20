@@ -75,7 +75,7 @@ class Stream (ndb.Model):
 		return self.streamName
 
 def getUserStreams (userId):
-	pdb.set_trace()
+	#pdb.set_trace()
 	userStreams = []
 	subbedStreams = []
 	result = User.query(User.username == userId)
@@ -169,7 +169,7 @@ def userCount():
 	return User.query().count()
 
 def addNewUser (newUserId, newUsername):
-	pdb.set_trace()
+	#pdb.set_trace()
 	user = User(userId = newUserId, username = newUsername)
 	stream = Stream(streamName = "stream2")
 	streamKey = stream.put()

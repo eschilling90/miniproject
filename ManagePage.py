@@ -14,7 +14,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 	
 class ManagePage(webapp2.RequestHandler):
-    def post(self):
+    def get(self):
         str = "s"
 
 application = webapp2.WSGIApplication([

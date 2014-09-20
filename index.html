@@ -15,10 +15,15 @@
       <input value="{{ password }}" name="password">
     </form>
 
-	<form method="adduser">
+  <form action="/manage">
+      <input type="submit" value="Login">
+  </form>
+
+	<form method="addUser">
       <input type="submit" value="Add User">
     </form>
   <a href="{{ url|safe }}">{{ url_linktext }}</a>
+
   </body>
 </html>
 {% endautoescape %}
