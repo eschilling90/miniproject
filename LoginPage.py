@@ -24,7 +24,7 @@ class LoginPage(webapp2.RequestHandler):
         else:
             url = users.create_login_url(self.request.uri)
             url_linktext = 'Login'
-        connexus.addNewUser(3, "user3")
+        #connexus.addNewUser(3, "user3")
         userList, t = connexus.getUserStreams("user3")
         template_values = {
             'users': t + userList,
@@ -35,7 +35,7 @@ class LoginPage(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
     def adduser(self):
-        connexus.addNewUser(connexus.getNewUserId(), "user" + str(connexus.getNewUserId()))
+        connexus.addNewUser(3, "user3")
 
 application = webapp2.WSGIApplication([
     ('/', LoginPage),
