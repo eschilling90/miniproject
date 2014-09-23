@@ -1,9 +1,11 @@
 from google.appengine.ext import ndb
 
+import logging
+
 class Stream (ndb.Model):
 	
 	streamId = ndb.IntegerProperty()
-	creatorId = ndb.IntegerProperty()
+	creatorName = ndb.StringProperty()
 	streamName = ndb.StringProperty()
 	blobstoreURL = ndb.StringProperty()
 	coverImageURL = ndb.BlobKeyProperty()
@@ -16,8 +18,8 @@ class Stream (ndb.Model):
 	def setStreamName(self, streamName):
 		self.streamName = streamName
 
-	def setCreatorId (self, creatorId):
-		self.creatorId = creatorId
+	def setCreatorId (self, creatorName):
+		self.creatorName = creatorName
 
 	def __repr__ (self):
 		return str(self)
@@ -25,14 +27,43 @@ class Stream (ndb.Model):
 	def __str__ (self):
 		return self.streamName
 
-	def addViewToStream (streamId):
-		stream = Stream.query(streamId == streamId).get()
+	@staticmethod
+	def addNewStream(sId, sName, cName):
+		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName)
+		logging.info("streamname %s", sName)
+		#cStream.coverImageURL = urlCoverImage)
+		#newstream.tags.append(streamTags)
+		return newstream.put()
+
+	@staticmethod
+	def addViewToStream (streamName):
+		stream = Stream.query(Stream.streamName == streamName).get()
 		if stream:
 			stream.viewTimes.append(datetime.datetime.now())
-			updateStreamViews()
+			Stream.updateStreamViews()
 
+	@staticmethod
 	def updateStreamViews ():
 		for stream in Stream.query():
 			for viewTime in stream.viewTimes:
 				if viewTime > datetime.datetime.now()-datetime.timedelta(hours=1):
 					del viewTime
+
+	@staticmethod
+	def getStreamId (sName):
+		result = Stream.query(Stream.streamName == sName)
+		stream = result.get()
+		streamId = -1
+		if stream:
+			streamId = stream.streamId
+		else:
+			streamId = Stream.getNewStreamId()
+		return streamId
+
+	@staticmethod
+	def getNewStreamId():
+		maxId = 0
+		for stream in Stream.query():
+			if stream.streamId > maxId:
+				maxId = stream.streamId
+		return maxId + 1

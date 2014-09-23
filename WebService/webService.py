@@ -8,29 +8,38 @@ from google.appengine.ext import ndb
 from ConnexusUser import User as cUser
 from ConnexusStream import Stream as cStream
 
+import logging
+
 class Management(webapp2.RequestHandler):
 	def get(self):
 		self.response.write('Management')
 
 	def post(self):
 		#in which you take a user id and return two lists of streams
-		uId = self.request.get('user_id')
+		logging.info("in management")
+		uName = self.request.get('user_name')
 		userStreams = []
 		subbedStreams = []
-		result = cUser.query(userId == uId)
+		result = cUser.query(cUser.username == uName)
 		user = result.get()
+		logging.info(user.username)
 		if user:
-			userStreams = getStreamList(user.userStreams)
-			subbedStreams = getStreamList(user.subbedStreams)
+			userStreams = Management.getStreamList(user.userStreams)
+			subbedStreams = Management.getStreamList(user.subbedStreams)
+		logging.info(userStreams)
+		logging.info(subbedStreams)
 		returnList = {'user_stream_list': userStreams, 'subbed_stream_list': subbedStreams}
-		self.response.write(json.dumps(retunList))
+		self.response.write(json.dumps(returnList))
 
+	@staticmethod
 	def getStreamList(streamList):
 		returnStream = []
+		logging.info("stream length %s", len(streamList))
 		for streamKey in streamList:
 			stream = streamKey.get()
+			logging.info("stream %s", stream)
 			if stream:
-				returnStream.append(stream)
+				returnStream.append(stream.streamId)
 		return returnStream
 
 class CreateStream(webapp2.RequestHandler):
@@ -41,29 +50,28 @@ class CreateStream(webapp2.RequestHandler):
 		#which takes a stream definition and returns a status code
 		statusCode = 0
 		streamName = self.request.get('stream_name')
-		streamId = self.request.get('stream_id') #may need to just generate this
-		userId = self.request.get('creator_id') #may need to just generate this
-		newSubscribers = self.request.get('new_subscriber_list')
-		urlCoverImage = self.request.get('url_cover_image')
-		streamTags = self.request.get('stream_tags')
+		#streamId = self.request.get('stream_id') #may need to just generate this
+		sId = cStream.getStreamId(streamName)
+		userName = self.request.get('creator_name') #may need to just generate this
+		#newSubscribers = self.request.get('new_subscriber_list')
+		#urlCoverImage = self.request.get('url_cover_image')
+		#streamTags = self.request.get('stream_tags')
+		streamList = []
 		for stream in cStream.query():
-			if stream.streamId == streamId:
+			if stream.streamId == sId:
 				statusCode = 1
 			if stream.streamName == streamName:
 				statusCode = 2
+			streamList.append((stream.streamName, stream.creatorName))
 		if statusCode == 0:
-			newstream = cStream(streamId = streamId,
-				streamName = streamName,
-				creatorId = userId,
-				coverImageURL = urlCoverImage)
-			newstream.tags.append(streamTags)
-			streamKey = stream.put()
-			cUser.addUserStream(userId, streamKey)
-			addNewSubscribers(newSubscribers, streamKey)
-		self.response.write(json.dumps({'status_code': statusCode}))
+			streamKey = cStream.addNewStream(sId, streamName, userName)
+			cUser.addUserStream(userName, streamKey)
+			#CreateStream.addNewSubscribers(newSubscribers, streamKey)
+		self.response.write(json.dumps({'status_code': statusCode, 'streams': streamList}))
 
+	@staticmethod
 	def addNewSubscribers(subList, streamKey):
-		for user in cUser.query(username.IN(subList)):
+		for user in cUser.query(cUser.username.IN(subList)):
 			user.subbedStreams.append(streamKey)
 
 class ViewStream(webapp2.RequestHandler):
@@ -77,7 +85,7 @@ class ViewStream(webapp2.RequestHandler):
 		startPage = self.request.get('start_page')
 		endPage = self.request.get('end_page')
 		URLlist = []
-		result = cStream.query(streamId == streamId)
+		result = cStream.query(cStream.streamId == streamId)
 		stream = result.get()
 		if stream:
 			i = 0
@@ -96,7 +104,7 @@ class UploadImage(webapp2.RequestHandler):
 		#which takes a stream id and a file
 		streamId = self.request.get('stream_id')
 		image = self.request.get('image')
-		result = cStream.query(streamId == streamId)
+		result = cStream.query(cStream.streamId == streamId)
 		stream = query.get()
 		if stream:
 			blobinfo = get_uploads(image)[0]
@@ -111,7 +119,7 @@ class ViewStreams(webapp2.RequestHandler):
 		#cover images
 		streamInfo = []
 		for stream in cStream.query():
-			streamInfo.append({stream.streamName: stream.coverImageURL})
+			streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 class SearchStreams(webapp2.RequestHandler):
@@ -125,7 +133,7 @@ class SearchStreams(webapp2.RequestHandler):
 		streamInfo = []
 		for stream in cStream.query():
 			if query in stream.streamName:
-				streamInfo.append({stream.streamName: stream.coverImageURL})
+				streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 class MostViewedStreams(webapp2.RequestHandler):
@@ -138,7 +146,7 @@ class MostViewedStreams(webapp2.RequestHandler):
 		for stream in cStream.query():
 			searchStreams.append((stream.streamName, len(stream.viewTimes)))
 		topStreams = sorted(searchStreams, lambda: x, -x[1])
-		self.response.write(json.dumps({'sorted_streams': topStreams})))
+		self.response.write(json.dumps({'sorted_streams': topStreams}))
 
 class ReportRequest(webapp2.RequestHandler):
 	def post(self):
@@ -146,9 +154,16 @@ class ReportRequest(webapp2.RequestHandler):
 
 class LoginUser(webapp2.RequestHandler):
 	def post(self):
-		userName = self.request.get('user_name')
-		userId = cUser.getUserId(username)
-		cUser.AddNewUser(userId, username)
+		#ndb.delete_multi(cUser.query().fetch(keys_only=True))
+		uName = self.request.get('user_name')
+		#userId = cUser.getUserId(username)
+		statusCode = 0
+		if cUser.query(cUser.username == uName).get():
+			statusCode = 1
+		else:
+			cUser.addNewUser(uName)
+			statusCode = 2
+		self.response.write(json.dumps({'status_code': statusCode}))
 
 application = webapp2.WSGIApplication([
 	('/management', Management),

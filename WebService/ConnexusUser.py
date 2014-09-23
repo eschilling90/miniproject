@@ -1,8 +1,9 @@
 from google.appengine.ext import ndb
 
+import logging
+
 class User(ndb.Model):
 
-	userId = ndb.IntegerProperty()
 	username = ndb.StringProperty()
 	userStreams = ndb.KeyProperty(repeated=True)
 	subbedStreams = ndb.KeyProperty(repeated=True)
@@ -10,33 +11,37 @@ class User(ndb.Model):
 	def setUsername(self, username):
 		self.username = username
 
-	def setUserId(self, userId):
-		self.userId = userId
-
-	def addUserStream(self, userId, streamKey):
-		result = user.query(User.userId == userId)
+	@staticmethod
+	def addUserStream(username, streamKey):
+		result = User.query(User.username == username)
 		user = result.get()
 		if user:
+			logging.info("add user stream %s, %s", username, streamKey)
 			user.userStreams.append(streamKey)
-
-	def addSubStream(self, userId, streamKey):
-		result = user.query(User.userId == userId)
+			user.put()
+			logging.info("user stream length %s", len(user.userStreams))
+	
+	@staticmethod
+	def addSubStream(username, streamKey):
+		result = user.query(User.username == username)
 		user = result.get()
 		if user:
 			user.subbedStreams.append(streamKey)
 
-	def getSubbedStreams(self, userId):
-		result = user.query(User.userId == userId)
+	@staticmethod
+	def getSubbedStreams(username):
+		result = user.query(User.username == username)
 		user = result.get()
 		if user:
 			return user.subbedStreams
 		return []
 
-	def getUserStreams (userId):
+	@staticmethod
+	def getUserStreams (username):
 		#pdb.set_trace()
 		userStreams = []
 		subbedStreams = []
-		result = User.query(User.username == userId)
+		result = User.query(User.username == username)
 		user = result.get()
 		if user:
 			userStreams = getStreamList(user.userStreams)
@@ -49,23 +54,25 @@ class User(ndb.Model):
 	def __str__ (self):
 		return self.username
 
-	def getAllUserStreams (userId):
+	@staticmethod
+	def getAllUserStreams (username):
 		#pdb.set_trace()
 		userStreams = []
 		subbedStreams = []
-		result = User.query(User.username == userId)
+		result = User.query(User.username == username)
 		user = result.get()
 		if user:
 			userStreams = getStreamList(user.userStreams)
 			subbedStreams = getStreamList(user.subbedStreams)
 		return userStreams, subbedStreams
 
-	def addNewUser (newUserId, newUsername):
+	@staticmethod
+	def addNewUser (newUsername):
 		#pdb.set_trace()
-		user = User(userId = newUserId, username = newUsername)
+		user = User(username = newUsername)
 		return user.put()
 
-	def getUserId (uname):
+	'''def getUserId (uname):
 		result = User.query(username == uname)
 		user = result.get()
 		userId = -1
@@ -80,4 +87,4 @@ class User(ndb.Model):
 		for user in User.query():
 			if user.userId > maxId:
 				maxId = user.userId
-		return maxId + 1
+		return maxId + 1'''
