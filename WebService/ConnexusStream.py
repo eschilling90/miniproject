@@ -28,7 +28,7 @@ class Stream (ndb.Model):
 		return self.streamName
 
 	@staticmethod
-	def addNewStream(sId, sName, cName):
+	def addNewStream(sId, sName, cName, newSubs, urlCover, tags):
 		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName)
 		logging.info("streamname %s", sName)
 		#cStream.coverImageURL = urlCoverImage)
@@ -41,6 +41,7 @@ class Stream (ndb.Model):
 		if stream:
 			stream.viewTimes.append(datetime.datetime.now())
 			Stream.updateStreamViews()
+			stream.put()
 
 	@staticmethod
 	def updateStreamViews ():
@@ -48,6 +49,7 @@ class Stream (ndb.Model):
 			for viewTime in stream.viewTimes:
 				if viewTime > datetime.datetime.now()-datetime.timedelta(hours=1):
 					del viewTime
+			stream.put()
 
 	@staticmethod
 	def getStreamId (sName):

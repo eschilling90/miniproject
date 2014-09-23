@@ -16,17 +16,16 @@ class User(ndb.Model):
 		result = User.query(User.username == username)
 		user = result.get()
 		if user:
-			logging.info("add user stream %s, %s", username, streamKey)
 			user.userStreams.append(streamKey)
 			user.put()
-			logging.info("user stream length %s", len(user.userStreams))
 	
 	@staticmethod
 	def addSubStream(username, streamKey):
-		result = user.query(User.username == username)
+		result = User.query(User.username == username)
 		user = result.get()
 		if user:
 			user.subbedStreams.append(streamKey)
+			user.put()
 
 	@staticmethod
 	def getSubbedStreams(username):

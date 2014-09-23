@@ -17,7 +17,7 @@ class Management(webapp2.RequestHandler):
 	def post(self):
 		#in which you take a user id and return two lists of streams
 		logging.info("in management")
-		uName = self.request.get('user_name')
+		uName = self.request.get('username')
 		userStreams = []
 		subbedStreams = []
 		result = cUser.query(cUser.username == uName)
@@ -52,11 +52,13 @@ class CreateStream(webapp2.RequestHandler):
 		streamName = self.request.get('stream_name')
 		#streamId = self.request.get('stream_id') #may need to just generate this
 		sId = cStream.getStreamId(streamName)
-		userName = self.request.get('creator_name') #may need to just generate this
-		#newSubscribers = self.request.get('new_subscriber_list')
-		#urlCoverImage = self.request.get('url_cover_image')
-		#streamTags = self.request.get('stream_tags')
+		userName = self.request.get('creator_name')
+		newSubscribers = self.request.get_all('new_subscriber_list')
+		urlCoverImage = self.request.get('url_cover_image')
+		streamTags = self.request.get_all('stream_tags')
 		streamList = []
+		for sub in newSubscribers:
+			logging.info(sub)
 		for stream in cStream.query():
 			if stream.streamId == sId:
 				statusCode = 1
@@ -64,15 +66,15 @@ class CreateStream(webapp2.RequestHandler):
 				statusCode = 2
 			streamList.append((stream.streamName, stream.creatorName))
 		if statusCode == 0:
-			streamKey = cStream.addNewStream(sId, streamName, userName)
+			streamKey = cStream.addNewStream(sId, streamName, userName, newSubscribers, urlCoverImage, streamTags)
 			cUser.addUserStream(userName, streamKey)
-			#CreateStream.addNewSubscribers(newSubscribers, streamKey)
+			CreateStream.addNewSubscribers(newSubscribers, streamKey)
 		self.response.write(json.dumps({'status_code': statusCode, 'streams': streamList}))
 
 	@staticmethod
 	def addNewSubscribers(subList, streamKey):
-		for user in cUser.query(cUser.username.IN(subList)):
-			user.subbedStreams.append(streamKey)
+		for user in subList:
+			cUser.addSubStream(user, streamKey)
 
 class ViewStream(webapp2.RequestHandler):
 	def get(self):
