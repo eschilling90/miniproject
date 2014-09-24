@@ -1,6 +1,7 @@
 import webapp2
 import json
 import urllib
+import logging
 
 from google.appengine.api import urlfetch
 from google.appengine.ext import ndb
@@ -8,7 +9,22 @@ from google.appengine.ext import ndb
 from ConnexusUser import User as cUser
 from ConnexusStream import Stream as cStream
 
-import logging
+
+class LoginUser(webapp2.RequestHandler):
+	def get(self):
+		self.response.write('LoginUser')
+
+	def post(self):
+		statusCode=0
+		username = self.request.get('username')
+		user = cUser.query(cUser.username == username).get()
+		if not user:
+			newUser = cUser(username = username)
+			newUser.put()
+			statusCode=1
+
+		self.response.write(json.dumps({'status_code': statusCode}))
+
 
 class Management(webapp2.RequestHandler):
 	def get(self):
@@ -22,7 +38,6 @@ class Management(webapp2.RequestHandler):
 		subbedStreams = []
 		result = cUser.query(cUser.username == uName)
 		user = result.get()
-		logging.info(user.username)
 		if user:
 			userStreams = Management.getStreamList(user.userStreams)
 			subbedStreams = Management.getStreamList(user.subbedStreams)
@@ -39,7 +54,7 @@ class Management(webapp2.RequestHandler):
 			stream = streamKey.get()
 			logging.info("stream %s", stream)
 			if stream:
-				returnStream.append(stream.streamId)
+				returnStream.append({'streamId': stream.streamId, 'streamName': stream.streamName})
 		return returnStream
 
 class CreateStream(webapp2.RequestHandler):
@@ -51,6 +66,7 @@ class CreateStream(webapp2.RequestHandler):
 		statusCode = 0
 		streamName = self.request.get('stream_name')
 		#streamId = self.request.get('stream_id') #may need to just generate this
+		sId = 32;
 		sId = cStream.getStreamId(streamName)
 		userName = self.request.get('creator_name')
 		newSubscribers = self.request.get_all('new_subscriber_list')
@@ -75,7 +91,6 @@ class CreateStream(webapp2.RequestHandler):
 	def addNewSubscribers(subList, streamKey):
 		for user in subList:
 			cUser.addSubStream(user, streamKey)
-
 class ViewStream(webapp2.RequestHandler):
 	def get(self):
 		self.response.write('ViewStream')
@@ -87,7 +102,7 @@ class ViewStream(webapp2.RequestHandler):
 		startPage = self.request.get('start_page')
 		endPage = self.request.get('end_page')
 		URLlist = []
-		result = cStream.query(cStream.streamId == streamId)
+		result = cStream.query(streamId == streamId)
 		stream = result.get()
 		if stream:
 			i = 0
@@ -106,7 +121,7 @@ class UploadImage(webapp2.RequestHandler):
 		#which takes a stream id and a file
 		streamId = self.request.get('stream_id')
 		image = self.request.get('image')
-		result = cStream.query(cStream.streamId == streamId)
+		result = cStream.query(streamId == streamId)
 		stream = query.get()
 		if stream:
 			blobinfo = get_uploads(image)[0]
@@ -121,7 +136,7 @@ class ViewStreams(webapp2.RequestHandler):
 		#cover images
 		streamInfo = []
 		for stream in cStream.query():
-			streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
+			streamInfo.append({stream.streamName: stream.coverImageURL})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 class SearchStreams(webapp2.RequestHandler):
@@ -135,7 +150,7 @@ class SearchStreams(webapp2.RequestHandler):
 		streamInfo = []
 		for stream in cStream.query():
 			if query in stream.streamName:
-				streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
+				streamInfo.append({stream.streamName: stream.coverImageURL})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 class MostViewedStreams(webapp2.RequestHandler):
@@ -156,16 +171,9 @@ class ReportRequest(webapp2.RequestHandler):
 
 class LoginUser(webapp2.RequestHandler):
 	def post(self):
-		#ndb.delete_multi(cUser.query().fetch(keys_only=True))
-		uName = self.request.get('user_name')
-		#userId = cUser.getUserId(username)
-		statusCode = 0
-		if cUser.query(cUser.username == uName).get():
-			statusCode = 1
-		else:
-			cUser.addNewUser(uName)
-			statusCode = 2
-		self.response.write(json.dumps({'status_code': statusCode}))
+		userName = self.request.get('user_name')
+		userId = cUser.getUserId(username)
+		cUser.AddNewUser(userId, username)
 
 application = webapp2.WSGIApplication([
 	('/management', Management),
