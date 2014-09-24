@@ -2,9 +2,13 @@ import webapp2
 import json
 import urllib
 import logging
+import re
 
 from google.appengine.api import urlfetch
 from google.appengine.ext import ndb
+from google.appengine.api import files, images
+from google.appengine.ext import blobstore
+from google.appengine.ext.webapp import blobstore_handlers
 
 from ConnexusUser import User as cUser
 from ConnexusStream import Stream as cStream
@@ -82,7 +86,7 @@ class CreateStream(webapp2.RequestHandler):
 				statusCode = 2
 			streamList.append((stream.streamName, stream.creatorName))
 		if statusCode == 0:
-			streamKey = cStream.addNewStream(sId, streamName, userName, newSubscribers, urlCoverImage, streamTags)
+			streamKey = cStream.addNewStream(sId, streamName, userName, urlCoverImage, streamTags)
 			cUser.addUserStream(userName, streamKey)
 			CreateStream.addNewSubscribers(newSubscribers, streamKey)
 		self.response.write(json.dumps({'status_code': statusCode, 'streams': streamList}))
@@ -91,6 +95,7 @@ class CreateStream(webapp2.RequestHandler):
 	def addNewSubscribers(subList, streamKey):
 		for user in subList:
 			cUser.addSubStream(user, streamKey)
+
 class ViewStream(webapp2.RequestHandler):
 	def get(self):
 		self.response.write('ViewStream')
@@ -119,13 +124,39 @@ class UploadImage(webapp2.RequestHandler):
 
 	def post(self):
 		#which takes a stream id and a file
+		'''logging.info(self.request.POST.items())
 		streamId = self.request.get('stream_id')
 		image = self.request.get('image')
-		result = cStream.query(streamId == streamId)
-		stream = query.get()
+		result = cStream.query(cStream.streamId == int(streamId))
+		stream = result.get()
 		if stream:
 			blobinfo = get_uploads(image)[0]
-			stream.imageURLs.append(blobinfo.key())
+			stream.imageURLs.append(blobinfo.key())'''
+		results = []
+		blob_keys = []
+		for name, fieldStorage in self.request.POST.items():
+			if type(fieldStorage) is unicode:
+				continue
+			result = {}
+			result['name'] = re.sub(r'^.*\\','',fieldStorage.filename)
+			result['type'] = fieldStorage.type
+			blob = files.blobstore.create(mime_type=result['type'],_blobinfo_uploaded_filename=result['name'])
+			with files.open(blob, 'a') as f:
+				f.write(fieldStorage.value)
+			files.finalize(blob)
+			blob_key = files.blobstore.get_blob_key(blob)
+			blob_keys.append(blob_key)
+			#use the images API to get a permanent serving URL if the file is an image
+			results.append(result)
+		streamId = self.request.get('stream_id')
+		queryResult = cStream.query(cStream.streamId == int(streamId))
+		stream = queryResult.get()
+		for result in results:
+			logging.info(result)
+		if stream:
+			for blobKey in blob_keys:
+				stream.imageURLs.append(blobKey)
+			stream.put()
 
 class ViewStreams(webapp2.RequestHandler):
 	def get(self):
