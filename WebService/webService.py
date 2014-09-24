@@ -104,18 +104,21 @@ class ViewStream(webapp2.RequestHandler):
 		#which takes a stream id and a page range and returns a
 		#list of URLs to images, and a page range
 		streamId = self.request.get('stream_id')
-		startPage = self.request.get('start_page')
-		endPage = self.request.get('end_page')
-		URLlist = []
-		result = cStream.query(streamId == streamId)
+		startPage = int(self.request.get('start_page'))
+		endPage = int(self.request.get('end_page'))
+		urlList = []
+		result = cStream.query(cStream.streamId == int(streamId))
 		stream = result.get()
+		logging.info("in viewstream")
 		if stream:
 			i = 0
 			for url in stream.imageURLs:
+				logging.info(startPage, i, endPage)
 				if i >= startPage and i < endPage:
-					URLList.append(url)
+					urlList.append(images.get_serving_url(url))
+					logging.info(images.get_serving_url(url))
 				i = i + 1
-		self.response.write(json.dumps({'url_list': URLList, 'start_page': startPage, 'end_page': endPage}))
+		self.response.write(json.dumps({'url_list': urlList, 'start_page': startPage, 'end_page': endPage, 'stream_size': len(stream.imageURLs)}))
 
 
 class UploadImage(webapp2.RequestHandler):
@@ -167,7 +170,7 @@ class ViewStreams(webapp2.RequestHandler):
 		#cover images
 		streamInfo = []
 		for stream in cStream.query():
-			streamInfo.append({stream.streamName: stream.coverImageURL})
+			streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 class SearchStreams(webapp2.RequestHandler):
@@ -181,7 +184,7 @@ class SearchStreams(webapp2.RequestHandler):
 		streamInfo = []
 		for stream in cStream.query():
 			if query in stream.streamName:
-				streamInfo.append({stream.streamName: stream.coverImageURL})
+				streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 class MostViewedStreams(webapp2.RequestHandler):
