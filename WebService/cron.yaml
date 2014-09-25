@@ -1,0 +1,4 @@
+cron:
+- description: email report on trending streams
+  url: /reportrequest
+  schedule: every 1 minutes

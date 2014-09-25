@@ -4,10 +4,8 @@ import urllib
 import logging
 import re
 
-from google.appengine.api import urlfetch
-from google.appengine.ext import ndb
-from google.appengine.api import files, images
-from google.appengine.ext import blobstore
+from google.appengine.api import files, images, urlfetch, mail
+from google.appengine.ext import blobstore, ndb
 from google.appengine.ext.webapp import blobstore_handlers
 
 from ConnexusUser import User as cUser
@@ -112,6 +110,7 @@ class ViewStream(webapp2.RequestHandler):
 		logging.info("in viewstream")
 		if stream:
 			i = 0
+			cStream.addViewToStream(streamId)
 			for url in stream.imageURLs:
 				logging.info(startPage, i, endPage)
 				if i >= startPage and i < endPage:
@@ -183,7 +182,9 @@ class SearchStreams(webapp2.RequestHandler):
 		queryString = self.request.get('query_string')
 		streamInfo = []
 		for stream in cStream.query():
-			if query in stream.streamName:
+			#logging.info(stream.streamTags)
+			#logging.info(any(queryString in tag for tag in stream.streamTags))
+			if queryString in stream.streamName or any(queryString in tag for tag in stream.streamTags):
 				streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
@@ -191,23 +192,58 @@ class MostViewedStreams(webapp2.RequestHandler):
 	def post(self):
 		#which returns a list of streams sorted by recent access
 		#frequency
-		searchStreams = {}
-		topStreams = []
-		cStream.updateStreamViews()
-		for stream in cStream.query():
-			searchStreams.append((stream.streamName, len(stream.viewTimes)))
-		topStreams = sorted(searchStreams, lambda: x, -x[1])
+		topStreams = getTopStreams()
 		self.response.write(json.dumps({'sorted_streams': topStreams}))
 
-class ReportRequest(webapp2.RequestHandler):
-	def post(self):
-		s = ""
+	@staticmethod
+	def getTopStreams():
+		searchStreams = []
+		topStreams = []
+		for stream in cStream.query():
+			searchStreams.append((stream.streamName, len(stream.viewTimes)))
+		topStreams = sorted(searchStreams, key=lambda x: -x[1])
+		return topStreams[:3]
 
-class LoginUser(webapp2.RequestHandler):
+class ReportRequest(webapp2.RequestHandler):
+	reportRate = 5
+
+	def get(self):
+		logging.info("This is a report provided every %d minutes", ReportRequest.reportRate)
+		cStream.updateStreamViews()
+		topStreams = MostViewedStreams.getTopStreams()
+		message = mail.EmailMessage(sender="Erik Schilling <erik.schilling@gmail.com>",
+                            subject="Most Viewed Streams")
+
+		message.to = "Erik Schilling <schilling.90@osu.edu>"
+		message.body = """
+		Dear Connexus User:
+		Here are the most viewed streams of the last {0} minutes.
+		
+		{1}
+		{2}
+		{3}
+		
+		Please let us know if you have any questions.
+		The Connexus Team
+		""".format(ReportRequest.reportRate, topStreams[0][0], topStreams[1][0], topStreams[2][0])
+		#message.send()
+
+	def post(self):
+		rate = int(self.request.get('report_rate'))
+		logging.info(rate)
+		if rate == 1:
+			ReportRequest.reportRate = 60
+		elif rate == 24:
+			ReportRequest.reportRate = 1440
+		else:
+			ReportRequest.reportRate = 5
+		logging.info(ReportRequest.reportRate)
+
+'''class LoginUser(webapp2.RequestHandler):
 	def post(self):
 		userName = self.request.get('user_name')
 		userId = cUser.getUserId(username)
-		cUser.AddNewUser(userId, username)
+		cUser.AddNewUser(userId, username)'''
 
 application = webapp2.WSGIApplication([
 	('/management', Management),

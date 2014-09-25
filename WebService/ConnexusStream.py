@@ -8,6 +8,7 @@ class Stream (ndb.Model):
 	creatorName = ndb.StringProperty()
 	streamName = ndb.StringProperty()
 	coverImageURL = ndb.StringProperty()
+	totalViews = ndb.IntegerProperty()
 	#repeated=True means that we can have multiple entries for
 	# imageURLs or viewTimes. Essentially, it acts as a list
 	imageURLs = ndb.BlobKeyProperty(repeated=True)
@@ -28,17 +29,17 @@ class Stream (ndb.Model):
 
 	@staticmethod
 	def addNewStream(sId, sName, cName, urlCover, tags):
-		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName, coverImageURL = urlCover)
+		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName, coverImageURL = urlCover, totalViews = 0)
 		logging.info("streamname %s", sName)
-		newstream.tags.extend(streamTags)
+		newstream.streamTags.extend(tags)
 		return newstream.put()
 
 	@staticmethod
-	def addViewToStream (streamName):
-		stream = Stream.query(Stream.streamName == streamName).get()
+	def addViewToStream (streamId):
+		stream = Stream.query(Stream.streamId == streamId).get()
 		if stream:
+			stream.totalViews = stream.totalViews + 1
 			stream.viewTimes.append(datetime.datetime.now())
-			Stream.updateStreamViews()
 			stream.put()
 
 	@staticmethod
