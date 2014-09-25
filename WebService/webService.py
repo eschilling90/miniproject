@@ -68,12 +68,14 @@ class CreateStream(webapp2.RequestHandler):
 		statusCode = 0
 		streamName = self.request.get('stream_name')
 		#streamId = self.request.get('stream_id') #may need to just generate this
-		sId = 32;
 		sId = cStream.getStreamId(streamName)
 		userName = self.request.get('creator_name')
-		newSubscribers = self.request.get_all('new_subscriber_list')
+		newSubscribersUnparsed = self.request.get('new_subscriber_list')
+		newSubscribers = newSubscribersUnparsed.split(",")
 		urlCoverImage = self.request.get('url_cover_image')
-		streamTags = self.request.get_all('stream_tags')
+		streamTagsUnparsed = self.request.get('stream_tags')
+		streamTagsUnparsed = streamTags.split(",")
+		comment = self.request.get('comment')
 		streamList = []
 		for sub in newSubscribers:
 			logging.info(sub)
@@ -87,12 +89,37 @@ class CreateStream(webapp2.RequestHandler):
 			streamKey = cStream.addNewStream(sId, streamName, userName, urlCoverImage, streamTags)
 			cUser.addUserStream(userName, streamKey)
 			CreateStream.addNewSubscribers(newSubscribers, streamKey)
+			CreateStream.sendSubscriptionEmail(newSubscribers, streamName, userName, comment)
 		self.response.write(json.dumps({'status_code': statusCode, 'streams': streamList}))
 
 	@staticmethod
 	def addNewSubscribers(subList, streamKey):
 		for user in subList:
 			cUser.addSubStream(user, streamKey)
+
+	@staticmethod
+	def sendSubscriptionEmail(subList, streamname, creatorname, comment):
+		for sub in subList:
+			if (mail.is_email_valid(sub)):
+				message = mail.EmailMessage(sender="Erik Schilling <erik.schilling@gmail.com>",
+		                            subject="Subscription Notice")
+
+				message.to = sub
+				message.body = """
+				Dear Connexus User:
+				You are now subscribed to the following stream: {0}
+				This stream was created by {1}
+				""".format(streamname, creatorname)
+				if comment:
+					message.body = message.body + """
+					{0} has this personal message to give:
+					{1}
+					""".format(creatorname, comment)
+				message.boady = message.body + """
+				Please let us know if you have any questions.
+				The Connexus Team
+				"""
+				#message.send()
 
 class ViewStream(webapp2.RequestHandler):
 	def get(self):
