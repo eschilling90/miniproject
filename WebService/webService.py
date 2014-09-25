@@ -20,12 +20,24 @@ class LoginUser(webapp2.RequestHandler):
 		statusCode=0
 		username = self.request.get('username')
 		user = cUser.query(cUser.username == username).get()
+		if not cUser.query(cUser.username == "admin").get():
+			LoginUser.createAdminUser()
 		if not user:
-			newUser = cUser(username = username)
+			admin = cUser.query(cUser.username == "admin").get()
+			globalReportRate = 5
+			if admin:
+				globalReportRate = admin.reportRate
+			newUser = cUser(username = username, reportRate = globalReportRate)
 			newUser.put()
 			statusCode=1
 
 		self.response.write(json.dumps({'status_code': statusCode}))
+
+	@staticmethod
+	def createAdminUser():
+		admin = cUser(username = "admin", reportRate = 5, lastMessage = 0)
+		logging.info("admin created")
+		admin.put()
 
 
 class Management(webapp2.RequestHandler):
@@ -232,39 +244,80 @@ class MostViewedStreams(webapp2.RequestHandler):
 		return topStreams[:3]
 
 class ReportRequest(webapp2.RequestHandler):
-	reportRate = 5
 
 	def get(self):
-		logging.info("This is a report provided every %d minutes", ReportRequest.reportRate)
-		cStream.updateStreamViews()
-		topStreams = MostViewedStreams.getTopStreams()
-		message = mail.EmailMessage(sender="Erik Schilling <erik.schilling@gmail.com>",
-                            subject="Most Viewed Streams")
+		reportRate = ReportRequest.getReportRate(True)
+		rate = ReportRequest.getReportRate()
+		logging.info("last %d", ReportRequest.getLastMessage())
+		logging.info(rate)
+		ReportRequest.setLastMessage(ReportRequest.getLastMessage() + 5)
+		if ReportRequest.getLastMessage() >= rate:
+			logging.info("This is a report provided every %s", reportRate)
+			cStream.updateStreamViews()
+			topStreams = MostViewedStreams.getTopStreams()
+			message = mail.EmailMessage(sender="Erik Schilling <erik.schilling@gmail.com>",
+	                            subject="Most Viewed Streams")
 
-		message.to = "Erik Schilling <schilling.90@osu.edu>"
-		message.body = """
-		Dear Connexus User:
-		Here are the most viewed streams of the last {0} minutes.
-		
-		{1}
-		{2}
-		{3}
-		
-		Please let us know if you have any questions.
-		The Connexus Team
-		""".format(ReportRequest.reportRate, topStreams[0][0], topStreams[1][0], topStreams[2][0])
-		#message.send()
+			message.to = "Erik Schilling <schilling.90@osu.edu>"
+			message.body = """
+			Dear Connexus User:
+			Here are the most viewed streams of the last {0}.
+			
+			{1}
+			{2}
+			{3}
+			
+			Please let us know if you have any questions.
+			The Connexus Team
+			""".format(reportRate, topStreams[0][0], topStreams[1][0], topStreams[2][0])
+			#message.send()
+			ReportRequest.setLastMessage(0)
 
 	def post(self):
 		rate = int(self.request.get('report_rate'))
-		logging.info(rate)
+		test = rate
 		if rate == 1:
-			ReportRequest.reportRate = 60
+			ReportRequest.setReportRate(60)
 		elif rate == 24:
-			ReportRequest.reportRate = 1440
+			ReportRequest.setReportRate(1440)
 		else:
-			ReportRequest.reportRate = 5
-		logging.info(ReportRequest.reportRate)
+			ReportRequest.setReportRate(5)
+		logging.info(ReportRequest.getReportRate())
+
+	@staticmethod
+	def getReportRate(display=False):
+		user = cUser.query(cUser.username == "admin").get()
+		if user:
+			rate = user.reportRate
+			if display:
+				if rate == 5:
+					return "5 minutes"
+				if rate == 60:
+					return "1 hour"
+				if rate == 1440:
+					return "24 hours"
+			else:
+				return rate
+		if display:
+			return "5 minutes"
+		return 5
+
+	@staticmethod
+	def setReportRate(rate):
+		admin = cUser.query(cUser.username == "admin").get()
+		admin.reportRate = rate
+		admin.put()
+
+	@staticmethod
+	def getLastMessage():
+		admin = cUser.query(cUser.username == "admin").get()
+		return admin.lastMessage
+
+	@staticmethod
+	def setLastMessage(time):
+		admin = cUser.query(cUser.username == "admin").get()
+		admin.lastMessage = time
+		admin.put()
 
 '''class LoginUser(webapp2.RequestHandler):
 	def post(self):

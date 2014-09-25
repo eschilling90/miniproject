@@ -7,9 +7,8 @@ class User(ndb.Model):
 	username = ndb.StringProperty()
 	userStreams = ndb.KeyProperty(repeated=True)
 	subbedStreams = ndb.KeyProperty(repeated=True)
-
-	def setUsername(self, username):
-		self.username = username
+	reportRate = ndb.IntegerProperty()
+	lastMessage = ndb.IntegerProperty()
 
 	@staticmethod
 	def addUserStream(username, streamKey):
