@@ -4,6 +4,7 @@ import urllib
 import logging
 import time
 import datetime
+import re
 
 from google.appengine.api import urlfetch
 from google.appengine.api import mail
@@ -11,12 +12,13 @@ from google.appengine.ext import ndb
 from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.api import images
+from google.appengine.api import images, files
 
 from ConnexusUser import User as cUser
 from ConnexusStream import Stream as cStream
 from ConnexusTopStreams import topStream as tStream
 
+UI_URL = "http://localhost:21080/"
 
 class LoginUser(webapp2.RequestHandler):
 	def get(self):
@@ -63,7 +65,7 @@ class Management(webapp2.RequestHandler):
 			logging.info("stream %s", stream)
 			if stream:
 				if len(stream.viewTimes) !=0:
-					returnStream.append({'streamId': stream.streamId, 'streamName': stream.streamName,'lastPicture': str(stream.viewTimes[0]),'numberOfPictures':len(stream.imageURLs),'totalViews':stream.totalViews})
+					returnStream.append({'streamId': stream.streamId, 'streamName': stream.streamName,'lastPicture': stream.lastUpload,'numberOfPictures':len(stream.imageURLs),'totalViews':stream.totalViews})
 				else:
 					returnStream.append({'streamId': stream.streamId, 'streamName': stream.streamName,'lastPicture':"Empty",'numberOfPictures':len(stream.imageURLs),'totalViews':stream.totalViews})
 		return returnStream
@@ -75,7 +77,6 @@ class CreateStream(webapp2.RequestHandler):
 
 	def post(self):
 		#which takes a stream definition and returns a status code
-		self.response.write("hello")
 		statusCode = 0
 		username = self.request.get('username')
 		streamName = self.request.get('stream_name')
@@ -101,7 +102,7 @@ class CreateStream(webapp2.RequestHandler):
 			CreateStream.addNewSubscribers(newSubscribers, streamKey)
 			CreateStream.sendSubscriptionEmail(newSubscribers, streamName, username, comment)
 
-		self.response.write(json.dumps({'status_code': statusCode, 'streams': streamList,}))
+		self.response.write(json.dumps({'status_code': statusCode, 'streams': streamList}))
 
 	@staticmethod
 	def addNewSubscribers(subList, streamKey):
@@ -197,7 +198,7 @@ class ViewStream(webapp2.RequestHandler):
 		streamId = self.request.get('streamId')
 		startPage = int(self.request.get('start_page'))
 		endPage = int(self.request.get('end_page'))
-		BlobKeyList = []
+		urlList = []
 		result = cStream.query(cStream.streamId == int(streamId))
 		stream = result.get()
 		logging.info("in viewstream")
@@ -205,28 +206,59 @@ class ViewStream(webapp2.RequestHandler):
 		if stream:
 			i = 0
 			cStream.addViewToStream(int(streamId))
-			for x in range(0,len(stream.imageURLs)):
+			for url in stream.imageURLs:
 				if i >= startPage and i < endPage:
-					BlobKeyList.append((str(stream.imageURLs[x])))
-					logging.info(images.get_serving_url(stream.imageURLs[x]))
+					urlList.append(images.get_serving_url(url))
+					logging.info(images.get_serving_url(url))
 				i = i + 1
-		self.response.write(json.dumps({'blob_key_list': BlobKeyList, 'start_page': startPage, 'end_page': endPage, 'stream_size': len(stream.imageURLs)}))
+		self.response.write(json.dumps({'url_list': urlList, 'start_page': startPage, 'end_page': endPage, 'stream_size': len(stream.imageURLs)}))
 
 class UploadImage(webapp2.RequestHandler):
 	def post(self):
-		streamId = self.request.get('streamId')
-		BlobKey = blobstore.BlobKey(str(self.request.get('BlobKey')))
 
-		stream = cStream.query(cStream.streamId == int(streamId)).get()
+		results = []
+		blob_keys = []
+
+		for name, fieldStorage in self.request.POST.items():
+			if type(fieldStorage) is unicode:
+				continue
+			result = {}
+			result['name'] = re.sub(r'^.*\\','',fieldStorage.filename)
+			result['type'] = fieldStorage.type
+			blob = files.blobstore.create(mime_type=result['type'],_blobinfo_uploaded_filename=result['name'])
+			with files.open(blob, 'a') as f:
+				f.write(fieldStorage.value)
+			files.finalize(blob)
+			blob_key = files.blobstore.get_blob_key(blob)
+			logging.info("Blob key %s", blob_key)
+			blob_keys.append(blob_key)
+			#use the images API to get a permanent serving URL if the file is an image
+			results.append(result)
+		streamId = self.request.get('stream_id')
+		comment = self.request.get('comment') # what am I supposed to do with this? There is no comment displayed in the mockups
+		queryResult = cStream.query(cStream.streamId == int(streamId))
+		stream = queryResult.get()
+		logging.info("Uploading image")
 		if stream:
-			stream.imageURLs.insert(0,BlobKey)
+			logging.info("number of keys %d", len(blob_keys))
+			for blobKey in blob_keys:
+				logging.info("url length %d", len(stream.imageURLs))
+				#stream.imageURLs.append(blobKey)
+				logging.info("url length %d", len(stream.imageURLs))
+			if len(blob_keys) > 0:
+				stream.lastUpload = str(datetime.date.today())
+				logging.info(stream.lastUpload)
+			#logging.info("key %s", stream.put())
+			stream.imageURLs.extend(blob_keys)
 			stream.put()
+		url_redirect = UI_URL + "viewStream?" + urllib.urlencode({'streams': len(stream.imageURLs), 'streamId': streamId, 'end_page': 3, 'start_page': 0, 'username': self.request.get('username')})
+		self.redirect(url_redirect)
 
 class getStream(webapp2.RequestHandler):
 	def get(self):
-		username="elieantoun@outlook.com"
-		user = cUser.query(cUser.username == username).get()
-		self.response.write(user.emailPreference)
+		streamId = 2
+		stream = cStream.query(cStream.streamId == streamId).get()
+		self.response.write({'streamURLS': stream.imageURLs})
 
 class SubsribeStream(webapp2.RequestHandler):
 	def post(self):
@@ -248,7 +280,7 @@ class ViewStreams(webapp2.RequestHandler):
 	def post(self):
 		streamInfo = []
 		for stream in cStream.query():
-			streamInfo.append({'stream_id': int(stream.streamId), stream.streamId: (stream.streamName, stream.coverImageURL)})
+			streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
 
@@ -264,7 +296,7 @@ class SearchStreams(webapp2.RequestHandler):
 		for stream in cStream.query():
 			#logging.info(stream.streamTags)
 			#logging.info(any(queryString in tag for tag in stream.streamTags))
-			if queryString in stream.streamName or any(queryString in tag for tag in stream.streamTags):
+			if len(streamInfo) < 5 and queryString in stream.streamName or any(queryString in tag for tag in stream.streamTags):
 				streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 

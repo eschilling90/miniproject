@@ -20,7 +20,7 @@ from google.appengine.ext import ndb
 from google.appengine.ext import blobstore
 from google.appengine.api import images
 
-Main_URl = "http://localhost:9080/"
+Main_URl = "http://localhost:22080/"
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -209,10 +209,10 @@ class ViewStream(webapp2.RequestHandler):
 		imageURLs=[]
 		url_to_fetch = Main_URl + "viewstream?streamId=" + str(streamId) + "&start_page="+str(startPage) + "&end_page=" + str(endPage)
 		result = urlfetch.fetch(url_to_fetch,method = urlfetch.POST)
-		blobKeyList = json.loads(result.content)['blob_key_list']
+		blobKeyList = json.loads(result.content)['url_list']
 
 		for i in range(0,len(blobKeyList)):
-			imageURLs.append(images.get_serving_url(blobKeyList[i]))
+			imageURLs.append(blobKeyList[i])
 
 
 		if (len(imageURLs)==0 and startPage!=0):
@@ -245,7 +245,8 @@ class ViewStream(webapp2.RequestHandler):
 		upload_url = blobstore.create_upload_url('/upload?streamId='+streamId+"&username=" + username)
 
 		self.response.out.write('<html><body>')
-		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
+		logging.info("%suploadimage?%s" % (Main_URl, urllib.urlencode({'stream_id': streamId, 'username': username})))
+		self.response.out.write('<form action="%suploadimage?%s" enctype="multipart/form-data" method="post">' % (Main_URl, urllib.urlencode({'stream_id': streamId, 'username': username})))
 		self.response.out.write('<fieldset class = "uploadImage">')
 		self.response.out.write("""<br><br><input class = "chooseFile" type ="file" name="file"><br>
 			<textarea class ="commentsField" type="text" name="comments" id ="comments" placeholder="Add Comments" rows="4" cols="40"></textarea>
@@ -255,7 +256,15 @@ class ViewStream(webapp2.RequestHandler):
 			 <br>
 			 <br>
 			 </form></body></html>""")
-
+		'''self.response.out.write("""
+          <html>
+            <body>
+              <form action="http://localhost:18080/uploadimage?%s" enctype="multipart/form-data" method="post">
+                <div><input type="file" name="file"/></div>
+                <div><input type="submit" value="Submit"></div>
+              </form>
+            </body>
+          </html>""" % (urllib.urlencode({'stream_id': 1})))'''
 
 		#Subscribe to stream
 		subsribe_html = '<input class ="subscribeButton" type="submit" name="Subscribe" value="Subscribe" onClick=subscribe('+'\''+username+'\''+","+'\''+streamId +'\''+');><p></p>'
@@ -333,7 +342,7 @@ class ViewAllStreams(webapp2.RequestHandler):
 
 		url_to_fetch = Main_URl + "viewAllStreams?"
 		result = urlfetch.fetch(url_to_fetch,method = urlfetch.POST)
-
+		logging.info("Result %s", result.content)
 		streamInfo = json.loads(result.content)['stream_list']
 		streamsIds = []
 
