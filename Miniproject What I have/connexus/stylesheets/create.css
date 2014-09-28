@@ -1,0 +1,178 @@
+.HeaderFieldset
+{
+border: 2px solid #1ab2b3;
+background-color: #1ab2b3;
+width:100%;
+height:60px;
+position:relative;
+left:-10px;
+top:-10px;
+
+}
+
+.HeaderFieldset img
+{
+position:relative;
+left:20px;
+top:0px;
+}
+
+.HeaderFieldset a
+{
+font-family:"Palatino Linotype";
+text-decoration: none;
+}
+
+.header1
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:50%;
+	top:40%;
+	color:#FFFFFF;
+
+}
+
+.header2
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:56%;
+	top:40%;
+	color:#CCCCCC;
+
+}
+
+.header3
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:61%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header4
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:66%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header5
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;;
+	left:72%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header6
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:80%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.WelcomeMessage
+{
+	font-family:"Consolas";
+	font-size: x-large;
+	position: absolute;
+	left: 50%;
+	width: 800px;
+	margin-left:-400px; 
+
+}
+
+
+.StreamInfo
+{
+	position:relative;
+	border : 2px solid #1ab2b3;
+	top:50px;
+	width: auto;
+	height: 400px;
+}
+
+.StreamInfo label
+{
+	position:relative;
+	font-family:"Consolas";
+	font-size: medium;
+	text-decoration: none;
+	left: 140px;
+}
+
+.StreamNameInput
+{
+	width: 300px;
+	height: 40px;
+	position: relative;
+	left: 50px;
+	font-size: large;
+	font-family:"Consolas";
+
+}
+
+.SubscribersInput
+{
+	width: 300px;
+	height: 100px;
+	position: relative;
+	left: 50px;
+	font-size: small;
+	font-family:"Consolas";
+
+}
+
+.TagsInput
+{
+	width: 300px;
+	height: 100px;
+	position: relative;
+	top:-300px;
+	left: 750px;
+	font-size: small;
+	font-family:"Consolas";
+}
+
+.CoverImageInput
+{
+	width: 300px;
+	height: 40px;
+	position: relative;
+	top:-270px;
+	left: 690px;
+	font-size: small;
+	font-family:"Consolas";
+}
+
+
+.StreamInfo button
+{
+	position: relative;
+	top:-210px;
+	left:880px;
+	border : 2px solid #1ab2b3;
+  	background-color: #FFFFFF;
+  	width:200px;
+  	height:35px;
+  	font-family:"Palatino Linotype";
+  	font-size:large;
+  	text-align:center;
+
+}
+
+

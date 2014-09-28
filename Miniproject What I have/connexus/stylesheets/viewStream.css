@@ -1,0 +1,187 @@
+.HeaderFieldset
+{
+border: 2px solid #1ab2b3;
+background-color: #1ab2b3;
+width:100%;
+height:60px;
+position:relative;
+left:-10px;
+top:-10px;
+
+}
+
+.HeaderFieldset img
+{
+position:relative;
+left:20px;
+top:0px;
+}
+
+.HeaderFieldset a
+{
+font-family:"Palatino Linotype";
+text-decoration: none;
+}
+
+.header1
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:50%;
+	top:40%;
+	color:#FFFFFF;
+
+}
+
+.header2
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:56%;
+	top:40%;
+	color:#FFFFFF;
+
+}
+
+.header3
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:61%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header4
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:66%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header5
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;;
+	left:72%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header6
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:80%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.HeaderButton6
+{
+position:absolute;
+left:80%;
+}
+
+.ImagesDisplay
+{
+	border: 2px solid #1ab2b3;
+	height: auto +10px;
+	width:920px;
+	position: absolute;
+	left: 50%;
+	margin-left: -460px;
+}
+
+.uploadImage
+{
+	border: 2px solid #1ab2b3;
+	width: 400px;
+	height: auto;
+	position: absolute;
+	left: 50%;
+	top: 75%;
+	margin-left: -210px;
+
+}
+
+.moreImages
+{
+	position: absolute;
+	left: 50%;
+	margin-left: -75px;
+	top:55%;
+	border : 2px solid #1ab2b3;
+  	background-color: #FFFFFF;
+  	width:150px;
+  	height:35px;
+  	font-family:"Palatino Linotype";
+  	font-size:large;
+  	text-align:center;
+}
+
+.uploadButton
+{
+	position: relative;
+	left: 150px;
+	top:35px;
+	border : 2px solid #1ab2b3;
+  	background-color: #FFFFFF;
+  	width:100px;
+  	height:35px;
+  	font-family:"Palatino Linotype";
+  	font-size:large;
+  	text-align:center;
+
+}
+.chooseFile
+{
+	height: 30px;
+	position: relative;
+	left: 100px;
+	font-family:"Palatino Linotype";
+	font-size: medium;
+}
+
+.commentsField
+{
+	position: relative;
+	left: 50px;
+
+}
+
+.noImagesInfo
+{
+	font-size: x-large;
+	font-family: "Consolas";
+	width:400px;
+	position: absolute;
+	left: 50%;
+	margin-left: -200px;
+	top:38%;
+	text-align: center;
+}
+
+.subscribeButton
+{
+	position: absolute;
+	left:50%;
+	margin-left: -75px;
+	top:65%;
+	border : 2px solid #1ab2b3;
+  	background-color: #FFFFFF;
+  	width:150px;
+  	height:35px;
+  	font-family:"Palatino Linotype";
+  	font-size:large;
+  	text-align:center;
+}
+

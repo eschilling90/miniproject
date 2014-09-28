@@ -1,0 +1,43 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+     <meta charset="utf-8">  
+     <title>Connexus</title>
+     <link rel="icon" type="image/png" href="testimage.png"/> <!-- Add image to the page title -->
+     <link type="text/css" rel="stylesheet" href="/stylesheets/viewStream.css" /> <!-- Link to css file -->
+
+</head>  
+
+
+<script>
+    function insertStreamId() {
+
+    	var query = window.location.search.substring(1);
+    	var param = query.split('=');
+        var element = document.getElementById("streamId");
+		element.innerHTML = param[2];
+		element.setAttribute("value",param[2])
+
+    }
+
+    function moreImages (username,streamId,startPage, endPage) 
+    {
+      window.location = "/viewStream?username=" + username +"&streamId=" + streamId +"&start_page=" + startPage + "&end_page=" + endPage
+    }
+
+    function subscribe(username,streamId)
+    {
+      window.location = '/subscribe?username=' + username + '&streamId=' + streamId
+
+    }
+
+
+    function redirect(loc) {
+
+        var query = window.location.search.substring(1);
+        window.location.assign("/"+loc+"?"+query)
+
+    }
+
+</script>
+
