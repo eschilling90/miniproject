@@ -3,6 +3,7 @@ import json
 import urllib
 import logging
 import re
+import datetime
 
 from google.appengine.api import files, images, urlfetch, mail
 from google.appengine.ext import blobstore, ndb
@@ -68,7 +69,12 @@ class Management(webapp2.RequestHandler):
 			stream = streamKey.get()
 			logging.info("stream %s", stream)
 			if stream:
-				returnStream.append({'streamId': stream.streamId, 'streamName': stream.streamName})
+				returnStream.append({'streamId': stream.streamId,
+					'streamName': stream.streamName,
+					'lastUpload': stream.lastUpload,
+					'streamSize': len(stream.imageURLs),
+					'totalViews': stream.totalViews})
+		logging.info(returnStream)
 		return returnStream
 
 class CreateStream(webapp2.RequestHandler):
@@ -86,7 +92,7 @@ class CreateStream(webapp2.RequestHandler):
 		newSubscribers = newSubscribersUnparsed.split(",")
 		urlCoverImage = self.request.get('url_cover_image')
 		streamTagsUnparsed = self.request.get('stream_tags')
-		streamTagsUnparsed = streamTags.split(",")
+		streamTags = streamTagsUnparsed.split(",")
 		comment = self.request.get('comment')
 		streamList = []
 		for sub in newSubscribers:
@@ -127,7 +133,7 @@ class CreateStream(webapp2.RequestHandler):
 					{0} has this personal message to give:
 					{1}
 					""".format(creatorname, comment)
-				message.boady = message.body + """
+				message.body = message.body + """
 				Please let us know if you have any questions.
 				The Connexus Team
 				"""
@@ -140,23 +146,26 @@ class ViewStream(webapp2.RequestHandler):
 	def post(self):
 		#which takes a stream id and a page range and returns a
 		#list of URLs to images, and a page range
-		streamId = self.request.get('stream_id')
+		streamId = int(self.request.get('stream_id'))
 		startPage = int(self.request.get('start_page'))
 		endPage = int(self.request.get('end_page'))
 		urlList = []
 		result = cStream.query(cStream.streamId == int(streamId))
 		stream = result.get()
 		logging.info("in viewstream")
+		streamsize = 0
 		if stream:
 			i = 0
 			cStream.addViewToStream(streamId)
 			for url in stream.imageURLs:
-				logging.info(startPage, i, endPage)
+				logging.info(url)
+				logging.info(url.__class__)
 				if i >= startPage and i < endPage:
 					urlList.append(images.get_serving_url(url))
 					logging.info(images.get_serving_url(url))
 				i = i + 1
-		self.response.write(json.dumps({'url_list': urlList, 'start_page': startPage, 'end_page': endPage, 'stream_size': len(stream.imageURLs)}))
+			streamsize = len(stream.imageURLs)
+		self.response.write(json.dumps({'url_list': urlList, 'start_page': startPage, 'end_page': endPage, 'stream_size': streamsize}))
 
 
 class UploadImage(webapp2.RequestHandler):
@@ -175,7 +184,17 @@ class UploadImage(webapp2.RequestHandler):
 			stream.imageURLs.append(blobinfo.key())'''
 		results = []
 		blob_keys = []
+		'''logging.info("Uploading Image")
+		logging.info(self.request.body.__class__)
+		logging.info(json.dumps(self.request.body))
+		logging.info(json.loads(self.request.body))
+		json_body = json.loads(self.request.body)
+		logging.info(json_body['stream_id'])
+		logging.info(json_body['file'].__class__)'''
+		logging.info(self.request.POST.items())
 		for name, fieldStorage in self.request.POST.items():
+		#fieldStorage = re.split(': |\r\n|; ', json_body['file'])
+			logging.info(fieldStorage)
 			if type(fieldStorage) is unicode:
 				continue
 			result = {}
@@ -189,14 +208,24 @@ class UploadImage(webapp2.RequestHandler):
 			blob_keys.append(blob_key)
 			#use the images API to get a permanent serving URL if the file is an image
 			results.append(result)
+		#end of for loop
+		logging.info(self.request.arguments())
+		logging.info("Before file")
+		logging.info(self.request.get('file').__class__)
+		logging.info("After file")
 		streamId = self.request.get('stream_id')
+		comment = self.request.get('comment') # what am I supposed to do with this? There is no comment displayed in the mockups
 		queryResult = cStream.query(cStream.streamId == int(streamId))
 		stream = queryResult.get()
+		logging.info("Printing results %s", stream.streamName)
 		for result in results:
 			logging.info(result)
 		if stream:
 			for blobKey in blob_keys:
 				stream.imageURLs.append(blobKey)
+			if len(blob_keys) > 0:
+				stream.lastUpload = str(datetime.date.today())
+				logging.info(stream.lastUpload)
 			stream.put()
 
 class ViewStreams(webapp2.RequestHandler):
@@ -219,11 +248,12 @@ class SearchStreams(webapp2.RequestHandler):
 		#which takes a query string and returns a list of streams 
 		#(titles and cover image urls) that contain matching text
 		queryString = self.request.get('query_string')
+		queryString = queryString.lower()
 		streamInfo = []
 		for stream in cStream.query():
 			#logging.info(stream.streamTags)
 			#logging.info(any(queryString in tag for tag in stream.streamTags))
-			if queryString in stream.streamName or any(queryString in tag for tag in stream.streamTags):
+			if len(streamInfo) < 5 and queryString in stream.streamName.lower() or any(queryString in tag.lower() for tag in stream.streamTags):
 				streamInfo.append({'stream_id': stream.streamId, stream.streamId: (stream.streamName, stream.coverImageURL)})
 		self.response.write(json.dumps({'stream_list': streamInfo}))
 
@@ -240,8 +270,12 @@ class MostViewedStreams(webapp2.RequestHandler):
 		topStreams = []
 		for stream in cStream.query():
 			searchStreams.append((stream.streamName, len(stream.viewTimes)))
-		topStreams = sorted(searchStreams, key=lambda x: -x[1])
-		return topStreams[:3]
+		searchStreams = sorted(searchStreams, key=lambda x: -x[1])
+		topStreams = searchStreams[:3]
+		topStreams[0][0] = str(topStreams[0][0]) + " views in past " + ReportRequest.getDisplayRate(True)
+		topStreams[1][0] = str(topStreams[1][0]) + " views in past " + ReportRequest.getDisplayRate(True)
+		topStreams[2][0] = str(topStreams[2][0]) + " views in past " + ReportRequest.getDisplayRate(True)
+		return topStreams
 
 class ReportRequest(webapp2.RequestHandler):
 
@@ -251,26 +285,28 @@ class ReportRequest(webapp2.RequestHandler):
 		logging.info("last %d", ReportRequest.getLastMessage())
 		logging.info(rate)
 		ReportRequest.setLastMessage(ReportRequest.getLastMessage() + 5)
-		if ReportRequest.getLastMessage() >= rate:
+		if ReportRequest.getLastMessage() >= rate and rate != 0:
 			logging.info("This is a report provided every %s", reportRate)
 			cStream.updateStreamViews()
 			topStreams = MostViewedStreams.getTopStreams()
 			message = mail.EmailMessage(sender="Erik Schilling <erik.schilling@gmail.com>",
 	                            subject="Most Viewed Streams")
 
-			message.to = "Erik Schilling <schilling.90@osu.edu>"
 			message.body = """
 			Dear Connexus User:
 			Here are the most viewed streams of the last {0}.
 			
-			{1}
-			{2}
-			{3}
+			{1} : {2}
+			{3} : {4}
+			{5} : {6}
 			
 			Please let us know if you have any questions.
 			The Connexus Team
-			""".format(reportRate, topStreams[0][0], topStreams[1][0], topStreams[2][0])
-			#message.send()
+			""".format(reportRate, topStreams[0][0], topStreams[0][1], topStreams[1][0], topStreams[1][1], topStreams[2][0], topStreams[2][1])
+			recipients = ["Erik Schilling <schilling.90@osu.edu>"]
+			for recipient in recipients:
+				message.to = recipient
+				#message.send()
 			ReportRequest.setLastMessage(0)
 
 	def post(self):
@@ -280,8 +316,10 @@ class ReportRequest(webapp2.RequestHandler):
 			ReportRequest.setReportRate(60)
 		elif rate == 24:
 			ReportRequest.setReportRate(1440)
-		else:
+		elif rate == 5:
 			ReportRequest.setReportRate(5)
+		else:
+			ReportRequest.setReportRate(0)
 		logging.info(ReportRequest.getReportRate())
 
 	@staticmethod
@@ -296,11 +334,21 @@ class ReportRequest(webapp2.RequestHandler):
 					return "1 hour"
 				if rate == 1440:
 					return "24 hours"
+				return rate
 			else:
 				return rate
 		if display:
 			return "5 minutes"
 		return 5
+
+	@staticmethod
+	def getDisplayRate(display=False):
+		rate = ReportRequest.getReportRate(display)
+		if rate == 0:
+			if display:
+				return "5 minutes"
+			return 5
+		return rate
 
 	@staticmethod
 	def setReportRate(rate):

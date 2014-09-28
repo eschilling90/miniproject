@@ -1,5 +1,5 @@
 from google.appengine.ext import ndb
-
+import datetime
 import logging
 
 class Stream (ndb.Model):
@@ -9,6 +9,8 @@ class Stream (ndb.Model):
 	streamName = ndb.StringProperty()
 	coverImageURL = ndb.StringProperty()
 	totalViews = ndb.IntegerProperty()
+	lastUpload = ndb.StringProperty()
+	creationTime = ndb.DateTimeProperty(auto_now_add=True)
 	#repeated=True means that we can have multiple entries for
 	# imageURLs or viewTimes. Essentially, it acts as a list
 	imageURLs = ndb.BlobKeyProperty(repeated=True)
@@ -32,12 +34,15 @@ class Stream (ndb.Model):
 		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName, coverImageURL = urlCover, totalViews = 0)
 		logging.info("streamname %s", sName)
 		newstream.streamTags.extend(tags)
+		newstream.totalViews = 0
 		return newstream.put()
 
 	@staticmethod
 	def addViewToStream (streamId):
 		stream = Stream.query(Stream.streamId == streamId).get()
 		if stream:
+			if not stream.totalViews:
+				stream.totalViews = 0
 			stream.totalViews = stream.totalViews + 1
 			stream.viewTimes.append(datetime.datetime.now())
 			stream.put()
