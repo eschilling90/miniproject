@@ -75,7 +75,6 @@ class CreateStream(webapp2.RequestHandler):
 
 	def post(self):
 		#which takes a stream definition and returns a status code
-		self.response.write("hello")
 		statusCode = 0
 		username = self.request.get('username')
 		streamName = self.request.get('stream_name')
@@ -379,6 +378,7 @@ class SendEmail24(webapp2.RequestHandler):
 				The Connexus Team
 				"""
 				message.send()
+
 
 
 application = webapp2.WSGIApplication([

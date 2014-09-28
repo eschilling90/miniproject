@@ -158,8 +158,21 @@ class CreateStream(webapp2.RequestHandler):
 		query_params = {'stream_name': stream_name, 'username':username, 'new_subscriber_list': subscribers,'message':message, 'stream_tags':tags,'url_cover_image':cover_image}
 		result = urlfetch.fetch(url_to_fetch + urllib.urlencode(query_params),method=urlfetch.POST)
 		time.sleep(3)
-		self.response.write(url_to_fetch + urllib.urlencode(query_params))
-		self.redirect('/manage?username='+username)
+		
+
+		status_code = json.loads(result.content)['status_code']
+
+		self.response.write(status_code)
+
+		if status_code ==0:
+			self.redirect('/manage?username='+username)
+
+		else:
+			self.redirect('/error')
+
+
+
+		
 
 
 class DeleteStream(webapp2.RequestHandler):
@@ -444,8 +457,9 @@ class TrendingStreams(webapp2.RequestHandler):
 
 		trending_url = '''<fieldset class = "AllStreamsDisplay">'''
 
+
 		for i in range(len(top_streams)):
-			trending_url = trending_url + '<input style="background:url(' + top_streams[i][2] +'); background-size: 100% 100%; " class="streamButton" type="submit" value ="' +top_streams[i][0] +'"  onClick=viewSingleStream('+'\''+username+'\''+","+'\''+str(top_streams[i][3])+'\''+","+'\''+str(startPage)+'\''+","+'\''+str(endPage)+'\''+');>'
+			trending_url = trending_url + '<input style="background:url(' + top_streams[i][2] +'); background-size: 100% 100%; " class="streamButton" type="submit" value ="' +top_streams[i][0] +'\n' +'\n' + str(top_streams[i][1]) + ' Views' +'"  onClick=viewSingleStream('+'\''+username+'\''+","+'\''+str(top_streams[i][3])+'\''+","+'\''+str(startPage)+'\''+","+'\''+str(endPage)+'\''+');>'
 
 		if (len(top_streams) == 0):
 			trending_url = '<label class="NoTrending"> No Streams are Trending at the Moment</label>'
@@ -470,6 +484,14 @@ class TrendingStreams(webapp2.RequestHandler):
 			result = urlfetch.fetch(url_to_fetch,method=urlfetch.POST)
 
 
+class Error(webapp2.RequestHandler):
+	def get(self):
+
+		template = JINJA_ENVIRONMENT.get_template('error.html')
+		self.response.write(template.render())
+
+
+
 
 
 application = webapp2.WSGIApplication([
@@ -483,6 +505,7 @@ application = webapp2.WSGIApplication([
     ('/viewStream',ViewStream),
     ('/viewAllStreams', ViewAllStreams),
     ('/trending',TrendingStreams),
+    ('/error',Error),
     ('/search',SearchStream)
 
 ], debug=True)
