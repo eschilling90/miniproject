@@ -413,6 +413,7 @@ class SendEmail24(webapp2.RequestHandler):
 				message.send()
 
 
+
 application = webapp2.WSGIApplication([
 	('/loginuser', LoginUser),
 	('/management', Management),
