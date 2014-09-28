@@ -1,0 +1,102 @@
+.HeaderFieldset
+{
+border: 2px solid #1ab2b31ab2b3;
+border: 0px;
+background-color: #1ab2b3;
+width:100%;
+height:60px;
+position:relative;
+left:-10px;
+top:-10px;
+
+}
+
+.HeaderFieldset img
+{
+position:relative;
+left:20px;
+top:0px;
+}
+
+
+
+.header1
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:50%;
+	top:40%;
+	color:#FFFFFF;
+
+}
+
+.header2
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:56%;
+	top:40%;
+	color:#FFFFFF;
+
+}
+
+.header3
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:61%;
+	top:40%;
+	color:#CCCCCC;
+}
+
+.header4
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:66%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header5
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:72%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.header6
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:80%;
+	top:40%;
+	color:#FFFFFF;
+}
+
+.AllStreamsDisplay
+{
+	height: auto;
+	border: 0px solid #1ab2b3;
+	width: auto;
+
+}
+
+.streamButton
+{
+	color: #FFFFFF; 
+	font-size: large;
+	position:relative;
+	height:200px; width:280px;
+	margin-left: 20px;
+	margin-top: 20px
+	
+}
