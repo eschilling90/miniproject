@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+     <meta charset="utf-8">  
+     <title>Connexus</title>
+     <link rel="icon" type="image/png" href="testimage.png"/> <!-- Add image to the page title -->
+     <link type="text/css" rel="stylesheet" href="/stylesheets/trending.css" /> <!-- Link to css file -->
+
+</head>
+
+<script>
+
+function viewSingleStream (username, id, start, end) {
+
+
+	window.location = "/viewStream?username=" + username +"&streamId=" + id +"&start_page=" + start + "&end_page=" + end
+
+}
+
+function selectRadio(time)
+{
+	if (time ==5)
+	{
+		document.getElementById("rd2").checked = true;
+	}
+
+	else if (time ==1)
+	{
+		document.getElementById("rd3").checked = true;
+	}
+
+	else if (time ==24)
+	{
+		document.getElementById("rd4").checked = true;
+	}
+
+	else
+	{
+		document.getElementById("rd1").checked = true;
+	}
+
+}
+
+</script>
