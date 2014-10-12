@@ -4,6 +4,7 @@ import urllib
 import logging
 import time
 import datetime
+import re
 
 from google.appengine.api import urlfetch
 from google.appengine.api import mail
@@ -11,7 +12,7 @@ from google.appengine.ext import ndb
 from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.api import images
+from google.appengine.api import files, images
 
 from ConnexusUser import User as cUser
 from ConnexusStream import Stream as cStream
@@ -200,26 +201,140 @@ class ViewStream(webapp2.RequestHandler):
 		result = cStream.query(cStream.streamId == int(streamId))
 		stream = result.get()
 		logging.info("in viewstream")
-
+		imageURLs = []
 		if stream:
 			i = 0
 			cStream.addViewToStream(int(streamId))
 			for x in range(0,len(stream.imageURLs)):
 				if i >= startPage and i < endPage:
 					BlobKeyList.append((str(stream.imageURLs[x])))
+					imageURLs.append(images.get_serving_url(stream.imageURLs[x]))
 					logging.info(images.get_serving_url(stream.imageURLs[x]))
 				i = i + 1
-		self.response.write(json.dumps({'blob_key_list': BlobKeyList, 'start_page': startPage, 'end_page': endPage, 'stream_size': len(stream.imageURLs)}))
+		self.response.write(json.dumps({'image_urls': imageURLs, 'start_page': startPage, 'end_page': endPage, 'stream_size': len(stream.imageURLs)}))
+
+WEBSITE = 'https://blueimp.github.io/jQuery-File-Upload/'
+MIN_FILE_SIZE = 1  # bytes
+MAX_FILE_SIZE = 5000000  # bytes
+IMAGE_TYPES = re.compile('image/(gif|p?jpeg|(x-)?png)')
+ACCEPT_FILE_TYPES = IMAGE_TYPES
+THUMBNAIL_MODIFICATOR = '=s80'  # max width / height
 
 class UploadImage(webapp2.RequestHandler):
-	def post(self):
+	'''def post(self):
 		streamId = self.request.get('streamId')
 		BlobKey = blobstore.BlobKey(str(self.request.get('BlobKey')))
 
 		stream = cStream.query(cStream.streamId == int(streamId)).get()
 		if stream:
 			stream.imageURLs.insert(0,BlobKey)
+			stream.put()'''
+	def initialize(self, request, response):
+		super(UploadImage, self).initialize(request, response)
+		self.response.headers['Access-Control-Allow-Origin'] = '*'
+		self.response.headers[
+			'Access-Control-Allow-Methods'
+		] = 'OPTIONS, HEAD, GET, POST, PUT, DELETE'
+		self.response.headers[
+			'Access-Control-Allow-Headers'
+		] = 'Content-Type, Content-Range, Content-Disposition'
+
+	def validate(self, file):
+		if file['size'] < MIN_FILE_SIZE:
+			file['error'] = 'File is too small'
+		elif file['size'] > MAX_FILE_SIZE:
+			file['error'] = 'File is too big'
+		elif not ACCEPT_FILE_TYPES.match(file['type']):
+			file['error'] = 'Filetype not allowed'
+		else:
+			return True
+		return False
+
+	def get_file_size(self, file):
+		file.seek(0, 2)  # Seek to the end of the file
+		size = file.tell()  # Get the position of EOF
+		file.seek(0)  # Reset the file position to the beginning
+		return size
+
+	def write_blob(self, data, info):
+		blob = files.blobstore.create(
+			mime_type=info['type'],
+			_blobinfo_uploaded_filename=info['name']
+		)
+		with files.open(blob, 'a') as f:
+			f.write(data)
+		files.finalize(blob)
+		return files.blobstore.get_blob_key(blob)
+
+	def handle_upload(self):
+		results = []
+		blob_keys = []
+		for name, fieldStorage in self.request.POST.items():
+			if type(fieldStorage) is unicode:
+				continue
+			result = {}
+			result['name'] = re.sub(
+				r'^.*\\',
+				'',
+				fieldStorage.filename
+			)
+			result['type'] = fieldStorage.type
+			result['size'] = self.get_file_size(fieldStorage.file)
+			if self.validate(result):
+				blob_key = str(
+					self.write_blob(fieldStorage.value, result)
+				)
+				blob_keys.append(blob_key)
+			#use the images API to get a permanent serving URL if the file is an image
+			results.append(result)
+
+		streamId = self.request.get('streamId')
+		stream = cStream.query(cStream.streamId == int(streamId)).get()
+		testStream1 = cStream.query(cStream.streamId == int(streamId)).get()
+		logging.info("Before %d", len(testStream1.imageURLs))
+		if stream:
+			for key in blob_keys:
+				blobKey = blobstore.BlobKey(str(key))
+				logging.info("KEY %s", blobKey)
+				stream.imageURLs.insert(0,blobKey)
 			stream.put()
+		testStream2 = cStream.query(cStream.streamId == int(streamId)).get()
+		logging.info("After %d", len(testStream2.imageURLs))
+		return results
+
+	def options(self):
+		pass
+
+	def head(self):
+		pass
+
+	def get(self):
+		self.redirect(WEBSITE)
+
+	def post(self):
+		if (self.request.get('_method') == 'DELETE'):
+			return self.delete()
+		result = {'files': self.handle_upload()}
+		s = json.dumps(result, separators=(',', ':'))
+		redirect = self.request.get('redirect')
+		if redirect:
+			return self.redirect(str(
+				redirect.replace('%s', urllib.quote(s, ''), 1)
+			))
+		if 'application/json' in self.request.headers.get('Accept'):
+			self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(s)
+		username = self.request.get('username')
+		streamId = self.request.get('streamId')
+		self.redirect(str('http://localhost:26080/viewStream?username='+username+"&streamId="+streamId + "&end_page=3&start_page=0"))
+
+	def delete(self):
+		key = self.request.get('key') or ''
+		blobstore.delete(key)
+		s = json.dumps({key: True}, separators=(',', ':'))
+		if 'application/json' in self.request.headers.get('Accept'):
+			self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(s)
 
 class getStream(webapp2.RequestHandler):
 	def get(self):
