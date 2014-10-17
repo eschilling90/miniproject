@@ -11,7 +11,14 @@
 
 <script>
 
+function InsertUsername()
+{
 
+	var query_params = window.location.search.substring(1).split('=')
+
+			element = document.getElementById("username")
+			element.value = query_params[1]
+}
 
 </script>
 
@@ -36,14 +43,14 @@
 <label style="position:relative; top:-420px; left:940px"> Add Tags</label>
 <textarea class = "TagsInput" type = "text" name="tags" id="tags" placeholders="Enter Tags"></textarea>
 
-<br
+<br>
 <br>
 <br>
 
 <label style="position:relative; top:-310px; left:920px"> Cover Image URL</label>
 <input class = "CoverImageInput" type="text" name="coverImageUrl" id="coverImageUrl"><br>
 <button id="create_stream"  type = "submit">Create Stream</button>
-<input id = "username" name="username" value="elie" type="hidden"></input>
+<input id = "username" name="username" value="elie" type="text"></input>
 
 </fieldset>
 </form>

@@ -72,6 +72,16 @@ top:0px;
 	color:#FFFFFF;
 }
 
+.header6
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:80%;
+	top:40%;
+	color:#FFFFFF;
+}
+
 .AllStreamsDisplay
 {
 	height: auto;

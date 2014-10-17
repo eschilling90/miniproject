@@ -1,12 +1,21 @@
-application: connexus-web-service
+application: connexus-web-servicee
 version: 1
 runtime: python27
 api_version: 1
 threadsafe: true
 
+builtins:
+- deferred: on
+
 handlers:
+- url: /(favicon\.ico|robots\.txt)
+  static_files: static/\1
+  upload: static/(.*)
+  expiration: '1d'
+
 - url: /.*
   script: webService.application
+
 
 libraries:
 - name: webapp2

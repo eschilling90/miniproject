@@ -51,8 +51,7 @@ class ManagePage(webapp2.RequestHandler):
 		href_html = '<fieldset class = HeaderFieldset>'+ '<img src="assets/images/Connexus.png" width="200"/> <a class="header1"> Manage</a> <a href = "/create?username='+username +"\"" +' class="header2"> Create</a>'
 		href_html = href_html + '<a href = "/viewAllStreams?username='+username +"\"" +' class="header3"> View</a>'
 		href_html = href_html + '<a href = "/search?username='+username +"\"" +' class="header4"> Search</a>'
-		href_html = href_html + '<a href = "/trending?username='+username +"\"" + 'class="header5"> Trending</a>'
-		href_html = href_html + '<a href = "/social?username='+username +"\"" + 'class="header6"> Social</a></fieldset>'
+		href_html = href_html + '<a href = "/trending?username='+username +"\"" + 'class="header5"> Trending</a></fieldset>'
 
 		self.response.write(href_html)
 
@@ -63,9 +62,9 @@ class ManagePage(webapp2.RequestHandler):
 		userSubbedStreams =[]		
 
 		if result:
-			logging.error("Fetched URL")
 			userStreams = json.loads(result.content)['user_stream_list']
 			userSubbedStreams = json.loads(result.content)['subbed_stream_list']
+
 		else:
 			logging.error("Did not Fetch URl")
 		
@@ -86,7 +85,7 @@ class ManagePage(webapp2.RequestHandler):
 		"""
 
 		for i in range(len(userStreams)):
-			userStreams_html = userStreams_html + "<tr>"+  "<td>"+ "<a href=\"/viewStream?username=" + username +"&start_page=0&end_page=3&streamId=" + str(userStreams[i]['streamId'])+"\"" + ">"+ userStreams[i]['streamName']+ "</a>" + "</td>"  + "<td>" + userStreams[i]['streamName'] + "</td>" + "<td>" + userStreams[i]['streamName'] + "</td>"  + "<td><input type=\"checkbox\" id = \"check" + str(userStreams[i]["streamId"]) +"\""+ "name=\"check" + str(userStreams[i]["streamId"]) +"\"" + ">" + "</td>" + "<td>" + "<input id=\"streamid" +str(userStreams[i]["streamId"]) +"\"" + "value=\"" + str(userStreams[i]["streamId"]) + "\"" + "type=\"hidden\">" + "</td>" + "<tr>" 
+			userStreams_html = userStreams_html + "<tr>"+  "<td>"+ "<a href=\"/viewStream?username=" + username +"&start_page=0&end_page=3&streamId=" + str(userStreams[i]['streamId'])+"\"" + ">"+ userStreams[i]['streamName']+ "</a>" + "</td>"  + "<td>" + str(userStreams[i]['lastPicture']) + "</td>" + "<td>" + str(userStreams[i]['numberOfPictures']) + "</td>"  + "<td><input type=\"checkbox\" id = \"check" + str(userStreams[i]["streamId"]) +"\""+ "name=\"check" + str(userStreams[i]["streamId"]) +"\"" + ">" + "</td>" + "<td>" + "<input id=\"streamid" +str(userStreams[i]["streamId"]) +"\"" + "value=\"" + str(userStreams[i]["streamId"]) + "\"" + "type=\"hidden\">" + "</td>" + "<tr>" 
 
 		userStreams_html = userStreams_html + """</table> <button id="delete">Delete Checked</button></fieldset></form>"""
 
@@ -117,7 +116,7 @@ class ManagePage(webapp2.RequestHandler):
   									</tr>"""
 
 		for i in range (len(userSubbedStreams)):
-			userSubbedStreams_html = userSubbedStreams_html + "<tr>"+  "<td>"+ "<a href=\"/viewStream?username=" + username +"&start_page=0&end_page=3&streamId=" + str(userSubbedStreams[i]['streamId'])+"\"" + ">"+ userSubbedStreams[i]['streamName']+ "</a>" + "</td>"  + "<td>" + userSubbedStreams[i]['streamName'] + "</td>" + "<td>" + userSubbedStreams[i]['streamName'] + "</td>" + "<td>" + userSubbedStreams[i]['streamName'] + "</td>"  + "<td><input type=\"checkbox\" id = \"check" + str(userStreams[i]["streamId"]) +"\""+ "name=\"check" + str(userStreams[i]["streamId"]) +"\"" + ">" + "</td>" + "<td>" + "<input id=\"streamid" +str(userStreams[i]["streamId"]) +"\"" + "value=\"" + str(userStreams[i]["streamId"]) + "\"" + "type=\"hidden\">" + "</td>" + "<tr>" 
+			userSubbedStreams_html = userSubbedStreams_html + "<tr>"+  "<td>"+ "<a href=\"/viewStream?username=" + username +"&start_page=0&end_page=3&streamId=" + str(userSubbedStreams[i]['streamId'])+"\"" + ">"+ userSubbedStreams[i]['streamName']+ "</a>" + "</td>"  + "<td>" + str(userSubbedStreams[i]['lastPicture']) + "</td>" + "<td>" + str(userSubbedStreams[i]['numberOfPictures']) + "</td>" + "<td>" + str(userSubbedStreams[i]['totalViews']) + "</td>"  + "<td><input type=\"checkbox\" id = \"check" + str(userSubbedStreams[i]["streamId"]) +"\""+ "name=\"check" + str(userSubbedStreams[i]["streamId"]) +"\"" + ">" + "</td>" + "<td>" + "<input id=\"streamid" +str(userSubbedStreams[i]["streamId"]) +"\"" + "value=\"" + str(userSubbedStreams[i]["streamId"]) + "\"" + "type=\"hidden\">" + "</td>" + "<tr>" 
 
 		userSubbedStreams_html = userSubbedStreams_html + """</table> <button id="unsubscribe">Unsubscribe Checked</button></fieldset>"""
 
@@ -135,11 +134,10 @@ class CreateStream(webapp2.RequestHandler):
 	def get(self):
 
 		username = self.request.get('username')
-		create_html = '<body bgcolor="#FFFFFF">  <fieldset class = HeaderFieldset>'+ '<img src="assets/images/Connexus.png" width="200"/> <a href = "/manage?username='+username +"\"" +'class="header1"> Manage</a> <a class="header2"> Create</a>'
+		create_html = '<body bgcolor="#FFFFFF" onload="InsertUsername()">  <fieldset class = HeaderFieldset>'+ '<img src="assets/images/Connexus.png" width="200"/> <a href = "/manage?username='+username +"\"" +'class="header1"> Manage</a> <a class="header2"> Create</a>'
 		create_html = create_html + '<a href = "/viewAllStreams?username='+username +"\"" +' class="header3"> View</a>'
 		create_html = create_html + '<a href = "/search?username='+username +"\"" +' class="header4"> Search</a>'
-		create_html = create_html + '<a href = "/trending?username='+username +"\"" + 'class="header5"> Trending</a>'
-		create_html = create_html + '<a href = "/social?username='+username +"\"" + 'class="header6"> Social</a></fieldset>'
+		create_html = create_html + '<a href = "/trending?username='+username +"\"" + 'class="header5"> Trending</a></fieldset>'
 		self.response.write(create_html )
 		template = JINJA_ENVIRONMENT.get_template('create.html')
 		self.response.write(template.render())
@@ -158,8 +156,18 @@ class CreateStream(webapp2.RequestHandler):
 		query_params = {'stream_name': stream_name, 'username':username, 'new_subscriber_list': subscribers,'message':message, 'stream_tags':tags,'url_cover_image':cover_image}
 		result = urlfetch.fetch(url_to_fetch + urllib.urlencode(query_params),method=urlfetch.POST)
 		time.sleep(3)
-		self.response.write(url_to_fetch + urllib.urlencode(query_params))
-		self.redirect('/manage?username='+username)
+		
+
+		status_code = json.loads(result.content)['status_code']
+
+		self.response.write(status_code)
+
+		if status_code ==0:
+			self.redirect('/manage?username='+username)
+
+		else:
+			self.redirect('/error')
+
 
 
 class DeleteStream(webapp2.RequestHandler):
@@ -179,7 +187,6 @@ class DeleteStream(webapp2.RequestHandler):
 		for i in range(len(streamIds)):
 			query_params.update({'stream'+str(i+1) : streamIds[i]})
 
-		self.response.write(streamIds[0])
 		url_to_fetch = Main_URl + "deleteStream?"
 		result = urlfetch.fetch(url_to_fetch + urllib.urlencode(query_params),method=urlfetch.POST)
 		time.sleep(3)
@@ -189,15 +196,16 @@ class DeleteStream(webapp2.RequestHandler):
 class ViewStream(webapp2.RequestHandler):
 	def get(self):
 
-		#Displaying the images
+
 		username = self.request.get('username')
-		href_html = '<fieldset class = HeaderFieldset>'+ '<img src="assets/images/Connexus.png" width="200"/> <a class="header1"> Manage</a> <a href = "/create?username='+username +"\"" +' class="header2"> Create</a>'
+		href_html = '<fieldset class = HeaderFieldset>'+ '<img src="assets/images/Connexus.png" width="200"/> <a href = "/manage?username='+username +"\"" +' class="header1"> Manage</a> <a href = "/create?username='+username +"\"" +' class="header2"> Create</a>'
 		href_html = href_html + '<a href = "/viewAllStreams?username='+username +"\"" +' class="header3"> View</a>'
 		href_html = href_html + '<a href = "/search?username='+username +"\"" +' class="header4"> Search</a>'
-		href_html = href_html + '<a href = "/trending?username='+username +"\"" + 'class="header5"> Trending</a>'
-		href_html = href_html + '<a href = "/social?username='+username +"\"" + 'class="header6"> Social</a></fieldset>'
+		href_html = href_html + '<a href = "/trending?username='+username +"\"" + 'class="header5"> Trending</a></fieldset>'
 
 		self.response.write(href_html)
+
+				#Displaying the images
 		template = JINJA_ENVIRONMENT.get_template('viewStream.html')
 		self.response.write(template.render())
 		streamId = self.request.get('streamId')
@@ -210,7 +218,7 @@ class ViewStream(webapp2.RequestHandler):
 		blobKeyList = json.loads(result.content)['blob_key_list']
 
 		for i in range(0,len(blobKeyList)):
-			imageURLs.append(images.get_serving_url(blobKeyList[i]))
+			imageURLs.append(blobKeyList[i])
 
 
 		if (len(imageURLs)==0 and startPage!=0):
@@ -220,7 +228,7 @@ class ViewStream(webapp2.RequestHandler):
 		view_stream_html = '<fieldset class = "ImagesDisplay">'
 
 		for i in range(0,len(imageURLs)):
-			view_stream_html = view_stream_html + " <img src=\"" + imageURLs[i] + "\"" +"""style="width:304px;height:228px">"""
+			view_stream_html = view_stream_html + " <img src=\"" + str(imageURLs[i]) + "\"" +"""style="width:304px;height:228px">"""
 
 		view_stream_html = view_stream_html + '</fieldset>'
 		
@@ -239,27 +247,30 @@ class ViewStream(webapp2.RequestHandler):
 			self.response.write(more_images_html)
 
 
-		#Requesting to upload image
-		upload_url = blobstore.create_upload_url('/upload?streamId='+streamId+"&username=" + username)
-
-		self.response.out.write('<html><body>')
-		self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
-		self.response.out.write('<fieldset class = "uploadImage">')
-		self.response.out.write("""<br><br><input class = "chooseFile" type ="file" name="file"><br>
-			<textarea class ="commentsField" type="text" name="comments" id ="comments" placeholder="Add Comments" rows="4" cols="40"></textarea>
-			 <input class ="uploadButton" type="submit" name="submit" value="Upload"> 
-			 </fieldset> 
-			 <br>
-			 <br>
-			 <br>
-			 </form></body></html>""")
-
+		#streamId field to send with for upload 
 
 		#Subscribe to stream
 		subsribe_html = '<input class ="subscribeButton" type="submit" name="Subscribe" value="Subscribe" onClick=subscribe('+'\''+username+'\''+","+'\''+streamId +'\''+');><p></p>'
 		self.response.write(subsribe_html)
 
+		redirect_html = '''<script>
+		$(function () {
+    		var totalUploadCount = $('#fileupload').length;
+    		var completedCount = 0;
+    		$('#fileupload').fileupload({
+        		// ... additional parameters
+        		complete: function (e, data) {
+            		if(completedCount++ == totalUploadCount)
+            		{
+                		window.location = "/viewStream?username='''+username+'''&streamId='''+streamId + '''&end_page=3&start_page=0";
+            		}
+            
+        		}
+    		});
+		});
+		</script>'''
 
+		self.response.write(redirect_html)
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
@@ -308,14 +319,12 @@ class UnSubscribeStream(webapp2.RequestHandler):
 		url_to_fetch = Main_URl + "unsubscribe?"
 		result = urlfetch.fetch(url_to_fetch + urllib.urlencode(query_params),method=urlfetch.POST)
 		time.sleep(3)
-		self.response.write(url_to_fetch + urllib.urlencode(query_params))
-
 		self.redirect('/manage?username='+username)
 
 class ViewAllStreams(webapp2.RequestHandler):
 	def get(self):
 		self.response.write("")
-
+		logging.info("View all streams")
 		username = self.request.get('username')
 		startPage = 0
 		endPage = 3
@@ -325,8 +334,8 @@ class ViewAllStreams(webapp2.RequestHandler):
 		viewAllStreams_html = '<body bgcolor="#FFFFFF"><fieldset class="HeaderFieldset"><img src="assets/images/Connexus.png" width="200"/>'
 		viewAllStreams_html = viewAllStreams_html  +  '<a href = "/manage?username='+username+"\""+ ' class="header1"> Manage</a> <a href = "/create?username='+username +"\"" +' class="header2"> Create</a>'
 		viewAllStreams_html = viewAllStreams_html + '<a class="header3"> View</a>'
-		viewAllStreams_html = viewAllStreams_html + '<a href = "/viewAllStreams" class="header4"> Search</a>'
-		viewAllStreams_html = viewAllStreams_html + '<a href = "/viewAllStreams" class="header5"> Social</a></fieldset>'
+		viewAllStreams_html = viewAllStreams_html + '<a href = "/search?username='+username +"\"" +' class="header4"> Search</a>'
+		viewAllStreams_html = viewAllStreams_html + '<a href = "/trending?username='+username +"\"" +' class="header5"> Trending</a></fieldset>'
 
 		viewAllStreams_html = viewAllStreams_html + '<fieldset class="AllStreamsDisplay">'
 
@@ -350,7 +359,14 @@ class ViewAllStreams(webapp2.RequestHandler):
 
 			stream_name = streamInfo[index][str(streamId)][0]
 			stream_cover_url =streamInfo[index][str(streamId)][1]
-			viewAllStreams_html = viewAllStreams_html + '<input style="background:url(' + stream_cover_url +'); background-size: 100% 100%; " class="streamButton" type="submit" value ="' +stream_name +'"  onClick=viewSingleStream('+'\''+username+'\''+","+'\''+str(streamId)+'\''+","+'\''+str(startPage)+'\''+","+'\''+str(endPage)+'\''+');>'
+			logging.info(str(username))
+			logging.info(str(stream_name))
+			logging.info(str(streamId))
+			logging.info(str(startPage))
+			logging.info(str(endPage))
+			s = "Cover image:" + str(stream_cover_url)
+			logging.info(s)
+			viewAllStreams_html = viewAllStreams_html + '<input style="background:url(' + str(stream_cover_url) +'); background-size: 100% 100%; " class="streamButton" type="submit" value ="' + str(stream_name) +'"  onClick=viewSingleStream('+'\''+str(username)+'\''+","+'\''+str(streamId)+'\''+","+'\''+str(startPage)+'\''+","+'\''+str(endPage)+'\''+');>'
 
 
 
@@ -371,10 +387,9 @@ class SearchStream (webapp2.RequestHandler):
 
 		search_html = '<body bgcolor="#FFFFFF"><fieldset class="HeaderFieldset"><img src="assets/images/Connexus.png" width="200"/>'
 		search_html = search_html  +  '<a href = "/manage?username='+username+"\""+ ' class="header1"> Manage</a> <a href = "/create?username='+username +"\"" +' class="header2"> Create</a>'
-		search_html = search_html + '<a href = "/viewAllStreams?username='+username +"\"" +'class="header3"> View</a>'
+		search_html = search_html + '<a href = "/viewAllStreams?username='+username +"\"" + ' class="header3"> View</a>'
 		search_html = search_html + '<a class="header4"> Search</a>'
-		search_html = search_html + '<a href = "/viewAllStreams" class="header5"> Social</a></fieldset>'
-
+		search_html = search_html + '<a href = "/trending?username='+username +"\"" +'class="header5"> Trending</a></fieldset>'
 		search_html = search_html + '<input class="SearchBar" id ="query_string" type="text" name ="query_string" placeholder="Search" required>'
 		search_html = search_html + '<input class="SearchButton" type="submit" value = "Search" onClick=Search('+'\''+username+'\''+');>'
 
@@ -396,18 +411,92 @@ class SearchStream (webapp2.RequestHandler):
 				search_html = search_html + '</fieldset>'
 
 			else:
+				search_html = search_html + '</fieldset>'
 				search_html = search_html + '<label class = "NoResult"> Your Search Returned no Results </label>'
 
 		else:
 			search_html = search_html + '<label class = "NoResult"> Please enter a Search Query</label>'
 
-
-
-
 		
 		self.response.write(search_html)
 
 
+
+class TrendingStreams(webapp2.RequestHandler):
+	def get(self):
+
+		
+		username = self.request.get('username')
+		time = self.request.get('time')
+		if time:
+			url_to_fetch = Main_URl + "updateEmailPreference?time=" + time+"&username=" + username
+			result = urlfetch.fetch(url_to_fetch,method=urlfetch.POST)
+		#self.response.write(username)
+		template = JINJA_ENVIRONMENT.get_template('trending.html')
+		self.response.write(template.render())
+
+		startPage = 0
+		endPage =3
+
+		url_to_fetch = Main_URl + "getTrending?" + urllib.urlencode({'username': username})
+		result = urlfetch.fetch(url_to_fetch, method = urlfetch.POST)
+		emailPref = json.loads(result.content)['emailPreference']
+
+		href_html = '<body bgcolor="#FFFFFF" onload="selectRadio(' + '\'' + str(emailPref) + '\');' + '"><fieldset class="HeaderFieldset"><img src="assets/images/Connexus.png" width="200"/>'
+		href_html = href_html  +  '<a href = "/manage?username='+username+"\""+ ' class="header1"> Manage</a> <a href = "/create?username='+username +"\"" +' class="header2"> Create</a>'
+		href_html = href_html + '<a href = "/viewAllStreams?username='+username +"\"" + ' class="header3"> View</a>'
+		href_html = href_html + '<a href = "/search?username='+username +"\"" + 'class="header4"> Search</a>'
+		href_html = href_html + '<a class="header5"> Trending</a></fieldset>'
+		self.response.write(href_html)
+
+		streamInfo = json.loads(result.content)['stream_list']
+		top_streams = []
+		for i in range(len(streamInfo)):
+			streamId = streamInfo[i]['stream_id']
+			stream = streamInfo[i][str(streamId)]
+			stream.append(int(streamId))
+			top_streams.append(stream)
+			
+			
+		top_streams = sorted(top_streams, key=lambda x: -x[1])
+		#self.response.write(streamInfo)
+
+		trending_url = '''<fieldset class = "AllStreamsDisplay">'''
+
+
+		for i in range(len(top_streams)):
+			trending_url = trending_url + '<input style="background:url(' + str(top_streams[i][2]) +'); background-size: 100% 100%; " class="streamButton" type="submit" value ="' +str(top_streams[i][0]) +'\n' +'\n' + str(top_streams[i][1]) + ' Views' +'"  onClick=viewSingleStream('+'\''+str(username)+'\''+","+'\''+str(top_streams[i][3])+'\''+","+'\''+str(startPage)+'\''+","+'\''+str(endPage)+'\''+');>'
+
+		if (len(top_streams) == 0):
+			trending_url = '<label class="NoTrending"> No Streams are Trending at the Moment</label>'
+
+		self.response.write(trending_url)
+
+		update_html = ""
+
+		update_html = update_html + '</fieldset>'
+		update_html = update_html +' <form action=""> <input type="hidden" name="username" value="' + username + '">'
+		update_html = update_html + '''<input id = "rd1" type="radio" name="time" class="RadioButton1" value="0"><label class="Label1"> No Rep </label><br>
+		<input type="radio" id = "rd2" name="time" class="RadioButton2"  value="5"><label class="Label2" value="5"> 5 min </label><br>
+		<input type="radio" id = "rd3" name="time" class="RadioButton3" value="1"><label class="Label3" value="1"> 1 hour </label><br>
+		<input type="radio" id = "rd4" name="time" class="RadioButton4" value="24"><label class="Label4" value="24"> 24 hours </label><br>
+		<input type = "submit" class = "UpdateButton" value ="Update">
+		</form>'''
+
+		self.response.write(update_html)
+
+
+class Error(webapp2.RequestHandler):
+	def get(self):
+
+		template = JINJA_ENVIRONMENT.get_template('error.html')
+		self.response.write(template.render())
+
+class Test(webapp2.RequestHandler):
+	def get(self):
+
+		template = JINJA_ENVIRONMENT.get_template('test.html')
+		self.response.write(template.render())
 
 
 
@@ -421,6 +510,9 @@ application = webapp2.WSGIApplication([
     ('/unsubscribe',UnSubscribeStream),
     ('/viewStream',ViewStream),
     ('/viewAllStreams', ViewAllStreams),
+    ('/trending',TrendingStreams),
+    ('/error',Error),
+    ('/test',Test),
     ('/search',SearchStream)
 
 ], debug=True)

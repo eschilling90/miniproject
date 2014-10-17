@@ -1,5 +1,9 @@
 from google.appengine.ext import ndb
+from ConnexusUser import User
+import time
 import datetime
+
+
 import logging
 
 class Stream (ndb.Model):
@@ -7,10 +11,8 @@ class Stream (ndb.Model):
 	streamId = ndb.IntegerProperty()
 	creatorName = ndb.StringProperty()
 	streamName = ndb.StringProperty()
-	coverImageURL = ndb.StringProperty()
+	coverImageURL = ndb.StringProperty(default="")
 	totalViews = ndb.IntegerProperty()
-	lastUpload = ndb.StringProperty()
-	creationTime = ndb.DateTimeProperty(auto_now_add=True)
 	#repeated=True means that we can have multiple entries for
 	# imageURLs or viewTimes. Essentially, it acts as a list
 	imageURLs = ndb.BlobKeyProperty(repeated=True)
@@ -30,21 +32,26 @@ class Stream (ndb.Model):
 		return self.streamName
 
 	@staticmethod
-	def addNewStream(sId, sName, cName, urlCover, tags):
-		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName, coverImageURL = urlCover, totalViews = 0)
+	def addNewStream(sId, sName, cName,cImage,tags):
+		newstream = Stream(streamId = sId, streamName = sName, creatorName = cName,coverImageURL=cImage,streamTags=tags,totalViews=0)
 		logging.info("streamname %s", sName)
-		newstream.streamTags.extend(tags)
-		newstream.totalViews = 0
+		#cStream.coverImageURL = urlCoverImage)
+		#newstream.tags.append(streamTags)
 		return newstream.put()
+
+	@staticmethod
+	def deleteStream(id):
+		stream = Stream.query(Stream.streamId == id).get()
+		if stream:
+			stream.key.delete()
+
 
 	@staticmethod
 	def addViewToStream (streamId):
 		stream = Stream.query(Stream.streamId == streamId).get()
 		if stream:
-			if not stream.totalViews:
-				stream.totalViews = 0
 			stream.totalViews = stream.totalViews + 1
-			stream.viewTimes.append(datetime.datetime.now())
+			stream.viewTimes.insert(0,datetime.datetime.now())
 			stream.put()
 
 	@staticmethod
@@ -54,6 +61,7 @@ class Stream (ndb.Model):
 				if viewTime > datetime.datetime.now()-datetime.timedelta(hours=1):
 					del viewTime
 			stream.put()
+
 
 	@staticmethod
 	def getStreamId (sName):

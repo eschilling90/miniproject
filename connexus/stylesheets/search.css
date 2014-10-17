@@ -72,6 +72,16 @@ top:0px;
 	color:#FFFFFF;
 }
 
+.header6
+{
+	font-family:"Palatino Linotype";
+	text-decoration: none;
+	position: absolute;
+	left:80%;
+	top:40%;
+	color:#FFFFFF;
+}
+
 .SearchBar
 {
 	width: 700px;
@@ -105,7 +115,7 @@ top:0px;
 	border: 0px solid #1ab2b3;
 	width: auto;
 	position: relative;
-	top:170px;
+	top:320px;
 
 }
 
@@ -130,4 +140,18 @@ top:0px;
 	margin-left: -200px;
 	top:20%;
 	text-align: center;
+}
+
+
+.NoResult2
+{
+	font-size: medium;
+	font-family: "Consolas";
+	width:400px;
+	position: relative;
+	left: 50%;
+	margin-left: -200px;
+	top:-100px;
+	text-align: center;
+
 }

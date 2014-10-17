@@ -5,22 +5,26 @@ import logging
 class User(ndb.Model):
 
 	username = ndb.StringProperty()
+	emailPreference = ndb.IntegerProperty()
 	userStreams = ndb.KeyProperty(repeated=True)
 	subbedStreams = ndb.KeyProperty(repeated=True)
-	reportRate = ndb.IntegerProperty()
-	lastMessage = ndb.IntegerProperty()
+
+	def setUsername(self, username):
+		self.username = username
 
 	@staticmethod
 	def addUserStream(username, streamKey):
 		result = User.query(User.username == username)
 		user = result.get()
 		if user:
+			logging.info("add user stream %s, %s", username, streamKey)
 			user.userStreams.append(streamKey)
 			user.put()
+			logging.info("user stream length %s", len(user.userStreams))
 	
 	@staticmethod
 	def addSubStream(username, streamKey):
-		result = User.query(User.username == username)
+		result = user.query(User.username == username)
 		user = result.get()
 		if user:
 			user.subbedStreams.append(streamKey)
